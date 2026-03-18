@@ -1,44 +1,24 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Học Online') - LMS</title>
-
-    <!-- Fonts -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@yield('title', config('app.name', 'Mewart Makeup'))</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-
-    @stack('styles')
-
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        }
-        .heading-font {
-            font-family: 'Oswald', sans-serif;
-        }
+        body { font-family: 'Mulish', sans-serif; }
     </style>
 </head>
-<body class="bg-white text-black antialiased">
+<body class="font-sans antialiased bg-[#1a1a1a] text-white">
+    @include('layouts.header')
 
-@include('layouts.header')
+    <main class="min-h-screen">
+        @yield('content')
+    </main>
 
-<!-- Main Content -->
-<main>
-    @yield('content')
-</main>
-
-<!-- Footer -->
-@include('layouts.footer')
-
-@stack('scripts')
+    @include('layouts.footer')
 </body>
 </html>
