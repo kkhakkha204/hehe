@@ -42,6 +42,7 @@ class BannerResource extends Resource
                             ->label('Hình ảnh')
                             ->image()
                             ->disk('public')
+                            ->visibility('public')
                             ->directory('banners')
                             ->required()
                             ->imageEditor()
@@ -83,6 +84,7 @@ class BannerResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Hình ảnh')
+                    ->disk('public')
                     ->size(100),
 
                 Tables\Columns\TextColumn::make('title')

@@ -9,7 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -21,12 +21,20 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (! $request->filled('name') && $request->filled('username')) {
+            $request->merge(['name' => $request->input('username')]);
+        }
+
         $request->validate([
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['required', 'confirmed'],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)->letters()->numbers()->mixedCase(),
+            ],
         ], [
             'username.required' => 'Tên đăng nhập là bắt buộc.',
             'username.unique' => 'Tên đăng nhập đã tồn tại.',
@@ -36,6 +44,10 @@ class RegisteredUserController extends Controller
             'email.unique' => 'Email đã được sử dụng.',
             'password.required' => 'Mật khẩu là bắt buộc.',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'password.letters' => 'Mật khẩu phải chứa ít nhất một chữ cái.',
+            'password.numbers' => 'Mật khẩu phải chứa ít nhất một chữ số.',
+            'password.mixed' => 'Mật khẩu phải chứa ít nhất một chữ hoa và một chữ thường.',
         ]);
 
         $user = User::create([

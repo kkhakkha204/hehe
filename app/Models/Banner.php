@@ -36,8 +36,10 @@ class Banner extends Model
         });
 
         static::deleting(function ($banner) {
-            if ($banner->image && Storage::disk('public')->exists($banner->image)) {
-                Storage::disk('public')->delete($banner->image);
+            $imagePath = self::normalizeImagePath($banner->image);
+
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
             }
         });
     }
@@ -53,7 +55,28 @@ class Banner extends Model
             return $this->image;
         }
 
-        return Storage::disk('public')->url($this->image);
+        $imagePath = self::normalizeImagePath($this->image);
+
+        if (!$imagePath) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($imagePath);
+    }
+
+    protected static function normalizeImagePath(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        $normalizedPath = ltrim($path, '/');
+
+        if (str_starts_with($normalizedPath, 'storage/')) {
+            $normalizedPath = substr($normalizedPath, strlen('storage/'));
+        }
+
+        return $normalizedPath;
     }
 
     // Scope: Chỉ lấy banner active

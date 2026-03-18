@@ -1,9 +1,9 @@
 @props(['courses'])
 
-<section class="featured-courses-section bg-white py-12 md:py-16">
+<section class="featured-courses-section bg-[#000000] py-12 md:py-16">
     <div class="container max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Section Title -->
-        <h2 class="text-3xl md:text-4xl text-center md:text-start font-bold text-black heading-font mb-6 md:mb-8">
+        <h2 class="heading-font text-[36px] font-normal text-white uppercase text-center md:text-start mb-8 md:mb-12 leading-none">
             Khóa học nổi bật
         </h2>
 
