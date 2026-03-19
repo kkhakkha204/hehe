@@ -16,17 +16,14 @@
             @endforeach
         </div>
 
-        <!-- Dots Navigation -->
+        <!-- Arrow Navigation -->
         @if(count($banners) > 1)
-            <div class="dots-container absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-                @foreach($banners as $index => $banner)
-                    <button
-                        class="dot w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white/60 transition-all duration-300"
-                        data-dot="{{ $index }}"
-                        aria-label="Chuyển đến slide {{ $index + 1 }}"
-                    ></button>
-                @endforeach
-            </div>
+            <button class="banner-arrow banner-arrow-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white text-2xl transition-all duration-300 cursor-pointer" aria-label="Slide trước">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="banner-arrow banner-arrow-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white text-2xl transition-all duration-300 cursor-pointer" aria-label="Slide tiếp">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+            </button>
         @endif
     </div>
 </section>
@@ -38,7 +35,8 @@
             if (!carousel) return;
 
             const slides = carousel.querySelectorAll('.banner-slide');
-            const dots = carousel.querySelectorAll('.dot');
+            const prevBtn = carousel.querySelector('.banner-arrow-prev');
+            const nextBtn = carousel.querySelector('.banner-arrow-next');
             const totalSlides = slides.length;
 
             if (totalSlides === 0) return;
@@ -52,10 +50,7 @@
 
             // Initialize first slide
             gsap.set(slides[0], { opacity: 1 });
-            if (dots.length > 0) {
-                dots[0].classList.add('active');
-                gsap.set(dots[0], { scale: 1.2, backgroundColor: 'rgba(255, 255, 255, 1)' });
-            }
+            // No dots to initialize
 
             function goToSlide(index, direction = 'next') {
                 if (isAnimating || index === currentIndex || index < 0 || index >= totalSlides) return;
@@ -65,22 +60,7 @@
                 const nextSlide = slides[index];
                 const oldIndex = currentIndex;
 
-                // Update dots
-                if (dots.length > 0) {
-                    gsap.to(dots[oldIndex], {
-                        scale: 1,
-                        backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                        duration: 0.3
-                    });
-                    dots[oldIndex].classList.remove('active');
-
-                    gsap.to(dots[index], {
-                        scale: 1.2,
-                        backgroundColor: 'rgba(255, 255, 255, 1)',
-                        duration: 0.3
-                    });
-                    dots[index].classList.add('active');
-                }
+                // No dots to update
 
                 // Animate slides
                 const timeline = gsap.timeline({
@@ -115,13 +95,19 @@
                 goToSlide(prev, 'prev');
             }
 
-            // Dots click
-            dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => {
-                    goToSlide(index);
+            // Arrow click
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    prevSlide();
                     resetAutoplay();
                 });
-            });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    nextSlide();
+                    resetAutoplay();
+                });
+            }
 
             // Touch/Mouse events for swipe
             const slidesWrapper = carousel.querySelector('.slides-wrapper');
