@@ -16,7 +16,7 @@
     <x-featured-courses-section :courses="$featuredCourses" />
 
     <!-- Combo Section -->
-    <x-combo-section />
+    <x-combo-section :combos="$combos" />
 
     <!-- Testimonials Section -->
     <x-testimonials-section />

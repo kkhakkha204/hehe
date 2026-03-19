@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banner;
+use App\Models\Combo;
 use App\Models\Course;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -40,6 +41,13 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
-        return view('home', compact('banners', 'freeCourses', 'featuredCourses', 'latestCourses'));
+        $combos = Combo::with(['courses' => function ($query) {
+            $query->where('is_published', true);
+        }, 'courses.author'])
+            ->active()
+            ->take(6)
+            ->get();
+
+        return view('home', compact('banners', 'freeCourses', 'featuredCourses', 'latestCourses', 'combos'));
     }
 }

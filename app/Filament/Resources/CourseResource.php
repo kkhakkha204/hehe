@@ -55,12 +55,16 @@ class CourseResource extends Resource
                                                 }
                                             }),
 
-                                        Forms\Components\TextInput::make('slug')
-                                            ->label('URL (Slug)')
+                                        Forms\Components\Select::make('level')
+                                            ->label('Level khóa học')
                                             ->required()
-                                            ->unique(Course::class, 'slug', ignoreRecord: true)
-                                            ->disabled()
-                                            ->dehydrated(),
+                                            ->options([
+                                                1 => 'Level 1',
+                                                2 => 'Level 2',
+                                                3 => 'Level 3',
+                                            ])
+                                            ->default(1)
+                                            ->native(false),
 
                                         Forms\Components\Select::make('category_id')
                                             ->label('Danh mục')
@@ -317,6 +321,12 @@ class CourseResource extends Resource
                 Tables\Columns\TextColumn::make('author.name')
                     ->label('Giảng viên')
                     ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('level')
+                    ->label('Level')
+                    ->formatStateUsing(fn (?int $state): string => 'Level ' . ($state ?? 1))
+                    ->badge()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('price')

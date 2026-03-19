@@ -3,6 +3,10 @@
 @section('title', 'Danh sách khóa học')
 
 @section('content')
+    @if(($combos ?? collect())->count())
+        <x-combo-section :combos="$combos" />
+    @endif
+
     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16" x-data="courseFilter()">
         <!-- Mobile Filter Button -->
         <button
@@ -76,9 +80,28 @@
                                     value="{{ $category->id }}"
                                     x-model="filters.categories"
                                     @change="applyFilters()"
-                                    class="w-4 h-4 border-white rounded text-white focus:ring-0 bg-transparent"
+                                    class="filter-checkbox"
                                 >
                                 <span class="text-sm group-hover:text-gray-300">{{ $category->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Level Filter -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3">Level</label>
+                    <div class="space-y-2">
+                        @foreach([1, 2, 3] as $level)
+                            <label class="flex items-center space-x-2 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $level }}"
+                                    x-model="filters.levels"
+                                    @change="applyFilters()"
+                                    class="filter-checkbox"
+                                >
+                                <span class="text-sm group-hover:text-gray-300">Level {{ $level }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -136,9 +159,28 @@
                                         value="{{ $category->id }}"
                                         x-model="filters.categories"
                                         @change="applyFilters()"
-                                        class="w-4 h-4 border-white rounded text-white focus:ring-0 bg-transparent"
+                                        class="filter-checkbox"
                                     >
                                     <span class="text-sm group-hover:text-gray-300">{{ $category->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Level Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-3">Level</label>
+                        <div class="space-y-2">
+                            @foreach([1, 2, 3] as $level)
+                                <label class="flex items-center space-x-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        value="{{ $level }}"
+                                        x-model="filters.levels"
+                                        @change="applyFilters()"
+                                        class="filter-checkbox"
+                                    >
+                                    <span class="text-sm group-hover:text-gray-300">Level {{ $level }}</span>
                                 </label>
                             @endforeach
                         </div>
@@ -190,6 +232,41 @@
     </div>
 @endsection
 
+@push('styles')
+    <style>
+        .filter-checkbox {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 19px;
+            height: 19px;
+            background: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 0;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .filter-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 1px;
+            width: 5px;
+            height: 11px;
+            border: solid #111111;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .filter-checkbox:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
         function courseFilter() {
@@ -197,7 +274,8 @@
                 filters: {
                     search: '{{ request("search") }}',
                     sort: '{{ request("sort", "newest") }}',
-                    categories: @json(request('categories', []))
+                    categories: @json(request('categories', [])),
+                    levels: @json(request('levels', []))
                 },
                 loading: false,
                 hasMore: {{ $courses->hasMorePages() ? 'true' : 'false' }},
@@ -249,6 +327,10 @@
                         params.append('categories[]', cat);
                     });
 
+                    this.filters.levels.forEach(level => {
+                        params.append('levels[]', level);
+                    });
+
                     fetch(`{{ route('courses.index') }}?${params.toString()}`, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
@@ -282,6 +364,10 @@
                         params.append('categories[]', cat);
                     });
 
+                    this.filters.levels.forEach(level => {
+                        params.append('levels[]', level);
+                    });
+
                     fetch(`{{ route('courses.index') }}?${params.toString()}`, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
@@ -306,7 +392,8 @@
                     this.filters = {
                         search: '',
                         sort: 'newest',
-                        categories: []
+                        categories: [],
+                        levels: []
                     };
                     this.applyFilters();
                 }

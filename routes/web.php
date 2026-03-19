@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ComboController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LearningController;
@@ -14,6 +15,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Danh sách khóa học
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.show');
+
+// Chi tiết combo khóa học
+Route::get('/combos/{combo:slug}', [ComboController::class, 'show'])->name('combos.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

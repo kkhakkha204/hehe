@@ -14,6 +14,7 @@ class Course extends Model
     protected $fillable = [
         'title',
         'slug',
+        'level',
         'category_id',
         'author_id',
         'thumbnail',
@@ -33,6 +34,7 @@ class Course extends Model
     protected $casts = [
         'is_published' => 'boolean',
         'is_featured' => 'boolean',
+        'level' => 'integer',
         'price' => 'decimal:0',
         'sale_price' => 'decimal:0',
     ];
@@ -74,6 +76,12 @@ class Course extends Model
     public function chapters()
     {
         return $this->hasMany(Chapter::class)->orderBy('sort_order');
+    }
+
+    public function combos()
+    {
+        return $this->belongsToMany(Combo::class, 'combo_course')
+            ->withTimestamps();
     }
 
     // Accessor

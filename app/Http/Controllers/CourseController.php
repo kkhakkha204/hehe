@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Category;
+use App\Models\Combo;
 use Illuminate\Http\Request;
 use App\Models\Banner;
 
@@ -27,6 +28,11 @@ class CourseController extends Controller
             $query->whereIn('category_id', $request->categories);
         }
 
+        // Filter theo level (nhiều level)
+        if ($request->filled('levels')) {
+            $query->whereIn('level', $request->levels);
+        }
+
         // Sort
         switch ($request->get('sort', 'newest')) {
             case 'price_asc':
@@ -48,6 +54,17 @@ class CourseController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $combos = Combo::with([
+            'courses' => function ($query) {
+                $query->where('is_published', true)
+                    ->with('author')
+                    ->orderBy('title');
+            },
+        ])
+            ->active()
+            ->take(12)
+            ->get();
+
         // Nếu là AJAX request (load more)
         if ($request->ajax()) {
             return response()->json([
@@ -57,7 +74,7 @@ class CourseController extends Controller
             ]);
         }
 
-        return view('courses.index', compact('courses', 'categories'));
+        return view('courses.index', compact('courses', 'categories', 'combos'));
     }
 
     public function show($slug)

@@ -35,7 +35,7 @@
                                 <svg class="faq-icon w-4 h-4 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                         </button>
-                        <div class="faq-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;">
+                        <div class="faq-content" style="height: 0; overflow: hidden; opacity: 0;">
                             <div class="p-6 bg-white border-[2px] border-t-0 border-black text-black">
                                 <p>Bạn có thể chọn khóa học và nhấn vào nút "Đăng ký" hoặc "Mua ngay", sau đó làm theo hướng dẫn thanh toán chi tiết trên màn hình để hoàn tất quá trình mua khóa học.</p>
                             </div>
@@ -50,7 +50,7 @@
                                 <svg class="faq-icon w-4 h-4 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                         </button>
-                        <div class="faq-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;">
+                        <div class="faq-content" style="height: 0; overflow: hidden; opacity: 0;">
                             <div class="p-6 md:p-8 bg-white border-[2px] border-black border-t-0 text-black leading-relaxed">
                                 <p class="font-bold mb-2">Có.</p>
                                 <p class="mb-4">Học viên sẽ được hỗ trợ qua:</p>
@@ -72,7 +72,7 @@
                                 <svg class="faq-icon w-4 h-4 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                         </button>
-                        <div class="faq-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;">
+                        <div class="faq-content" style="height: 0; overflow: hidden; opacity: 0;">
                             <div class="p-6 bg-white border-[2px] border-t-0 border-black text-black">
                                 <p>Các bài học được thiết kế thực tế, đi từ cơ bản đến nâng cao. Giảng viên hướng dẫn từng bước rất chi tiết để ai cũng có thể thực hành và áp dụng ngay được.</p>
                             </div>
@@ -87,7 +87,7 @@
                                 <svg class="faq-icon w-4 h-4 transition-transform duration-300 flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                         </button>
-                        <div class="faq-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;">
+                        <div class="faq-content" style="height: 0; overflow: hidden; opacity: 0;">
                             <div class="p-6 bg-white border-[2px] border-t-0 border-black text-black">
                                 <p>Mewart có chính sách hoàn tiền 100% trong vòng 7 ngày đầu tiên nếu bạn không hài lòng về chất lượng. Đảm bảo hoàn toàn không có rủi ro.</p>
                             </div>
@@ -107,58 +107,145 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!accordion) return;
 
     const toggles = accordion.querySelectorAll('.faq-toggle');
-    let activeIndex = 1; // Default open item (FAQ Item 2)
+    const items = accordion.querySelectorAll('.faq-item');
+    const DURATION = 460;
+    const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    let activeIndex = 1;
 
-    function openItem(item) {
+    function setButtonState(item, isOpen) {
         const btn = item.querySelector('.faq-toggle');
-        const content = item.querySelector('.faq-content');
         const icon = item.querySelector('.faq-icon');
 
-        btn.classList.remove('bg-transparent', 'text-black', 'hover:bg-gray-50/50');
-        btn.classList.add('bg-black', 'text-white');
-        icon.style.transform = 'rotate(180deg)';
+        if (!btn || !icon) {
+            return;
+        }
 
-        // Animate open
+        if (isOpen) {
+            btn.classList.remove('bg-transparent', 'text-black', 'hover:bg-gray-50/50');
+            btn.classList.add('bg-black', 'text-white');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            btn.classList.add('bg-transparent', 'text-black', 'hover:bg-gray-50/50');
+            btn.classList.remove('bg-black', 'text-white');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function expandItem(item, immediate = false) {
+        const content = item.querySelector('.faq-content');
+        const inner = content?.firstElementChild;
+
+        if (!content || !inner) {
+            return;
+        }
+
+        setButtonState(item, true);
+
+        const targetHeight = inner.scrollHeight;
+
+        content.style.willChange = 'height, opacity';
+        content.style.transition = `height ${DURATION}ms ${EASING}, opacity 320ms ease`;
+
+        if (immediate) {
+            content.style.height = 'auto';
+            content.style.opacity = '1';
+            content.style.willChange = 'auto';
+            return;
+        }
+
+        content.style.height = '0px';
         content.style.opacity = '0';
-        content.style.maxHeight = content.scrollHeight + 'px';
+
         requestAnimationFrame(() => {
+            content.style.height = `${targetHeight}px`;
             content.style.opacity = '1';
         });
+
+        const onTransitionEnd = (event) => {
+            if (event.propertyName === 'height') {
+                content.style.height = 'auto';
+                content.style.willChange = 'auto';
+                content.removeEventListener('transitionend', onTransitionEnd);
+            }
+        };
+
+        content.addEventListener('transitionend', onTransitionEnd);
     }
 
-    function closeItem(item) {
-        const btn = item.querySelector('.faq-toggle');
+    function collapseItem(item, immediate = false) {
         const content = item.querySelector('.faq-content');
-        const icon = item.querySelector('.faq-icon');
+        const inner = content?.firstElementChild;
 
-        btn.classList.add('bg-transparent', 'text-black', 'hover:bg-gray-50/50');
-        btn.classList.remove('bg-black', 'text-white');
-        icon.style.transform = 'rotate(0deg)';
+        if (!content || !inner) {
+            return;
+        }
 
-        // Animate close
-        content.style.maxHeight = '0';
-        content.style.opacity = '0';
+        setButtonState(item, false);
+
+        const startHeight = content.offsetHeight || inner.scrollHeight;
+
+        content.style.willChange = 'height, opacity';
+        content.style.transition = `height ${DURATION}ms ${EASING}, opacity 280ms ease`;
+
+        if (immediate) {
+            content.style.height = '0px';
+            content.style.opacity = '0';
+            content.style.willChange = 'auto';
+            return;
+        }
+
+        content.style.height = `${startHeight}px`;
+        content.style.opacity = '1';
+
+        requestAnimationFrame(() => {
+            content.style.height = '0px';
+            content.style.opacity = '0';
+        });
+
+        const onTransitionEnd = (event) => {
+            if (event.propertyName === 'height') {
+                content.style.willChange = 'auto';
+                content.removeEventListener('transitionend', onTransitionEnd);
+            }
+        };
+
+        content.addEventListener('transitionend', onTransitionEnd);
     }
 
-    // Initialize: open the default item
-    const items = accordion.querySelectorAll('.faq-item');
-    if (items[activeIndex]) {
-        openItem(items[activeIndex]);
-    }
+    items.forEach((item, index) => {
+        if (index === activeIndex) {
+            expandItem(item, true);
+        } else {
+            collapseItem(item, true);
+        }
+    });
 
     toggles.forEach((toggle, index) => {
         toggle.addEventListener('click', () => {
-            const clickedItem = items[index];
-            const isOpen = toggle.classList.contains('bg-black');
-
-            // Close all items
-            items.forEach(item => closeItem(item));
-
-            // If wasn't open, open it
-            if (!isOpen) {
-                openItem(clickedItem);
+            if (activeIndex === index) {
+                collapseItem(items[index]);
+                activeIndex = -1;
+                return;
             }
+
+            if (activeIndex !== -1 && items[activeIndex]) {
+                collapseItem(items[activeIndex]);
+            }
+
+            expandItem(items[index]);
+            activeIndex = index;
         });
+    });
+
+    window.addEventListener('resize', () => {
+        if (activeIndex === -1 || !items[activeIndex]) {
+            return;
+        }
+
+        const currentContent = items[activeIndex].querySelector('.faq-content');
+        if (currentContent) {
+            currentContent.style.height = 'auto';
+        }
     });
 });
 </script>
