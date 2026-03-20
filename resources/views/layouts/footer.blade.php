@@ -34,7 +34,7 @@
                     <li><a href="{{ route('home') }}" class="hover:text-white/70 transition-colors">Trang chủ</a></li>
                     <li><a href="{{ route('login') }}" class="hover:text-white/70 transition-colors">Login</a></li>
                     <li><a href="#" class="hover:text-white/70 transition-colors">Feedback</a></li>
-                    <li><a href="#" class="hover:text-white/70 transition-colors">Giới thiệu</a></li>
+                    <li><a href="{{ route('about') }}" class="hover:text-white/70 transition-colors">Giới thiệu</a></li>
                     <li><a href="{{ route('courses.index') }}" class="hover:text-white/70 transition-colors">Khóa học</a></li>
                     <li><a href="#" class="hover:text-white/70 transition-colors">Kiến thức Makeup</a></li>
                     <li><a href="#" class="hover:text-white/70 transition-colors">Chính sách và bảo mật</a></li>

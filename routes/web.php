@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Route;
 // Trang chủ
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Giới thiệu
+Route::view('/gioi-thieu', 'about')->name('about');
+
+Route::view('/feedback', 'feedback')->name('feedback');
+
 // Danh sách khóa học
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.show');

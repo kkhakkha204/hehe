@@ -2,6 +2,8 @@
     @php
         $isHomeActive = request()->routeIs('home');
         $isCoursesActive = request()->routeIs('courses.*') || request()->routeIs('learning.*') || request()->routeIs('checkout.*') || request()->routeIs('pre-checkout.*');
+        $isAboutActive = request()->routeIs('about');
+        $isFeedbackActive = request()->routeIs('feedback');
     @endphp
 
     <div class="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,10 +22,10 @@
                     <a href="{{ route('courses.index') }}" class="text-white border-b-2 {{ $isCoursesActive ? 'border-white' : 'border-transparent hover:border-white/70' }} pb-1 transition-colors duration-200">
                         Khóa học
                     </a>
-                    <a href="#" class="text-white hover:text-[#d4af37] transition-colors duration-200">
+                    <a href="{{ route('about') }}" class="text-white border-b-2 {{ $isAboutActive ? 'border-white' : 'border-transparent hover:border-white/70' }} pb-1 transition-colors duration-200">
                         Giới thiệu
                     </a>
-                    <a href="#" class="text-white hover:text-[#d4af37] transition-colors duration-200">
+                    <a href="{{ route('feedback') }}" class="text-white border-b-2 {{ $isFeedbackActive ? 'border-white' : 'border-transparent hover:border-white/70' }} pb-1 transition-colors duration-200">
                         Feedback
                     </a>
                     <a href="#" class="text-white hover:text-[#d4af37] transition-colors duration-200">
@@ -84,8 +86,11 @@
                 <a href="{{ route('courses.index') }}" class="text-white text-lg border-l-2 {{ $isCoursesActive ? 'border-white' : 'border-transparent' }} pl-3 hover:text-gray-300 transition-colors duration-200 font-medium">
                     Khóa học
                 </a>
-                <a href="#" class="text-white text-lg hover:text-gray-300 transition-colors duration-200 font-medium">
-                    Về chúng tôi
+                <a href="{{ route('about') }}" class="text-white text-lg border-l-2 {{ $isAboutActive ? 'border-white' : 'border-transparent' }} pl-3 hover:text-gray-300 transition-colors duration-200 font-medium">
+                    Giới thiệu
+                </a>
+                <a href="{{ route('feedback') }}" class="text-white text-lg border-l-2 {{ $isFeedbackActive ? 'border-white' : 'border-transparent' }} pl-3 hover:text-gray-300 transition-colors duration-200 font-medium">
+                    Feedback
                 </a>
                 @auth
                     <a href="{{ route('dashboard') }}" class="text-white text-lg hover:text-gray-300 transition-colors duration-200 font-medium">
