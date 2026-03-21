@@ -16,11 +16,11 @@ class AuthorResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $navigationLabel = 'Authors';
+    protected static ?string $navigationLabel = 'Giảng viên';
 
-    protected static ?string $modelLabel = 'Author';
+    protected static ?string $modelLabel = 'giảng viên';
 
-    protected static ?string $pluralModelLabel = 'Authors';
+    protected static ?string $pluralModelLabel = 'giảng viên';
 
     protected static ?int $navigationSort = 2;
 
@@ -28,7 +28,7 @@ class AuthorResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Forms\Components\Section::make('Thông tin cơ bản')
                     ->description('Thông tin cơ bản của giảng viên')
                     ->schema([
                         Forms\Components\FileUpload::make('avatar')

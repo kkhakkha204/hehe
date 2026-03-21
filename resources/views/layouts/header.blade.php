@@ -28,7 +28,7 @@
                     <a href="{{ route('feedback') }}" class="text-white border-b-2 {{ $isFeedbackActive ? 'border-white' : 'border-transparent hover:border-white/70' }} pb-1 transition-colors duration-200">
                         Feedback
                     </a>
-                    <a href="#" class="text-white hover:text-[#d4af37] transition-colors duration-200">
+                    <a href="{{ route('knowledge') }}" class="{{ request()->routeIs('knowledge') ? 'text-[#ffb800]' : 'text-white hover:text-[#ffb800]' }} transition-colors duration-200">
                         Kiến thức Makeup
                     </a>
                 </nav>
@@ -36,9 +36,15 @@
                 <!-- Auth Links -->
                 <div class="flex items-center gap-4 text-[16px] font-normal">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="border border-[#d4af37] text-[#d4af37] px-5 py-2 rounded-md hover:bg-[#d4af37] hover:text-black transition-colors duration-300">
-                            Khóa học của tôi
-                        </a>
+                        @if (auth()->user()->isAdmin())
+                            <a href="{{ route('filament.admin.pages.dashboard') }}" class="border border-[#d4af37] text-[#d4af37] px-5 py-2 rounded-md hover:bg-[#d4af37] hover:text-black transition-colors duration-300">
+                                Truy cập admin
+                            </a>
+                        @else
+                            <a href="{{ route('profile.edit') }}" class="border border-[#d4af37] text-[#d4af37] px-5 py-2 rounded-md hover:bg-[#d4af37] hover:text-black transition-colors duration-300">
+                                Khóa học của tôi
+                            </a>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
                             <button type="submit" class="text-white hover:text-[#d4af37] transition-colors duration-200">
@@ -93,9 +99,15 @@
                     Feedback
                 </a>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="text-white text-lg hover:text-gray-300 transition-colors duration-200 font-medium">
-                        Khóa học của tôi
-                    </a>
+                    @if (auth()->user()->isAdmin())
+                        <a href="{{ route('filament.admin.pages.dashboard') }}" class="text-white text-lg hover:text-gray-300 transition-colors duration-200 font-medium">
+                            Truy cập admin
+                        </a>
+                    @else
+                        <a href="{{ route('profile.edit') }}" class="text-white text-lg hover:text-gray-300 transition-colors duration-200 font-medium">
+                            Khóa học của tôi
+                        </a>
+                    @endif
                 @endauth
             </nav>
 

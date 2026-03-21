@@ -17,11 +17,11 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-folder';
 
-    protected static ?string $navigationLabel = 'Categories';
+    protected static ?string $navigationLabel = 'Danh mục';
 
-    protected static ?string $modelLabel = 'Category';
+    protected static ?string $modelLabel = 'danh mục';
 
-    protected static ?string $pluralModelLabel = 'Categories';
+    protected static ?string $pluralModelLabel = 'danh mục';
 
     protected static ?int $navigationSort = 1; // Hiển thị ở vị trí đầu tiên
 
@@ -29,7 +29,7 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Forms\Components\Section::make('Thông tin cơ bản')
                     ->description('Thông tin cơ bản của danh mục')
                     ->schema([
                         Forms\Components\TextInput::make('name')
@@ -70,7 +70,7 @@ class CategoryResource extends Resource
                     ])
                     ->columns(2), // Chia 2 cột
 
-                Forms\Components\Section::make('SEO Settings')
+                Forms\Components\Section::make('Cài đặt SEO')
                     ->description('Tối ưu hóa công cụ tìm kiếm')
                     ->schema([
                         Forms\Components\TextInput::make('seo_title')

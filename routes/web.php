@@ -16,6 +16,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/gioi-thieu', 'about')->name('about');
 
 Route::view('/feedback', 'feedback')->name('feedback');
+Route::view('/kien-thuc-makeup', 'knowledge')->name('knowledge');
 
 // Danh sách khóa học
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');

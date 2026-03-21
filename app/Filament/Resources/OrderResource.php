@@ -17,9 +17,13 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationLabel = 'Orders';
+    protected static ?string $navigationLabel = 'Đơn hàng';
 
-    protected static ?string $navigationGroup = 'Sales';
+    protected static ?string $modelLabel = 'đơn hàng';
+
+    protected static ?string $pluralModelLabel = 'đơn hàng';
+
+    protected static ?string $navigationGroup = 'Bán hàng';
 
     protected static ?int $navigationSort = 1;
 
@@ -27,39 +31,39 @@ class OrderResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Order Information')
+                Forms\Components\Section::make('Thông tin đơn hàng')
                     ->schema([
                         Forms\Components\TextInput::make('order_code')
-                            ->label('Order Code')
+                            ->label('Mã đơn hàng')
                             ->disabled()
                             ->dehydrated(false),
 
                         Forms\Components\Select::make('status')
-                            ->label('Status')
+                            ->label('Trạng thái')
                             ->options([
-                                'pending' => 'Pending',
-                                'paid' => 'Paid',
-                                'cancelled' => 'Cancelled',
-                                'expired' => 'Expired',
+                                'pending' => 'Chờ thanh toán',
+                                'paid' => 'Đã thanh toán',
+                                'cancelled' => 'Đã hủy',
+                                'expired' => 'Hết hạn',
                             ])
                             ->required()
                             ->native(false),
 
                         Forms\Components\DateTimePicker::make('paid_at')
-                            ->label('Paid At')
+                            ->label('Thanh toán lúc')
                             ->disabled()
                             ->dehydrated(false),
 
                         Forms\Components\DateTimePicker::make('expires_at')
-                            ->label('Expires At')
+                            ->label('Hết hạn lúc')
                             ->disabled()
                             ->dehydrated(false),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Customer & Course')
+                Forms\Components\Section::make('Khách hàng và khóa học')
                     ->schema([
                         Forms\Components\Select::make('user_id')
-                            ->label('Customer')
+                            ->label('Khách hàng')
                             ->relationship('user', 'name')
                             ->searchable()
                             ->preload()
@@ -67,7 +71,7 @@ class OrderResource extends Resource
                             ->dehydrated(false),
 
                         Forms\Components\Select::make('course_id')
-                            ->label('Course')
+                            ->label('Khóa học')
                             ->relationship('course', 'title')
                             ->searchable()
                             ->preload()
@@ -75,45 +79,45 @@ class OrderResource extends Resource
                             ->dehydrated(false),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Payment Details')
+                Forms\Components\Section::make('Chi tiết thanh toán')
                     ->schema([
                         Forms\Components\TextInput::make('amount')
-                            ->label('Original Amount')
+                            ->label('Giá gốc')
                             ->disabled()
                             ->dehydrated(false)
                             ->suffix('₫')
                             ->numeric(),
 
                         Forms\Components\TextInput::make('discount_amount')
-                            ->label('Discount Amount')
+                            ->label('Số tiền giảm')
                             ->disabled()
                             ->dehydrated(false)
                             ->suffix('₫')
                             ->numeric(),
 
                         Forms\Components\TextInput::make('final_amount')
-                            ->label('Final Amount')
+                            ->label('Số tiền cuối')
                             ->disabled()
                             ->dehydrated(false)
                             ->suffix('₫')
                             ->numeric(),
 
                         Forms\Components\Select::make('coupon_id')
-                            ->label('Coupon Used')
+                            ->label('Mã giảm giá đã dùng')
                             ->relationship('coupon', 'code')
                             ->disabled()
                             ->dehydrated(false),
 
                         Forms\Components\TextInput::make('bank_transaction_id')
-                            ->label('Bank Transaction ID')
+                            ->label('Mã giao dịch ngân hàng')
                             ->disabled()
                             ->dehydrated(false),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Payment Data')
+                Forms\Components\Section::make('Dữ liệu thanh toán')
                     ->schema([
                         Forms\Components\KeyValue::make('payment_data')
-                            ->label('Webhook Data')
+                            ->label('Dữ liệu webhook')
                             ->disabled()
                             ->dehydrated(false),
                     ])
@@ -127,7 +131,7 @@ class OrderResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('order_code')
-                    ->label('Order Code')
+                    ->label('Mã đơn hàng')
                     ->searchable()
                     ->sortable()
                     ->copyable()
@@ -135,37 +139,35 @@ class OrderResource extends Resource
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Customer')
+                    ->label('Khách hàng')
                     ->searchable()
                     ->sortable()
                     ->description(fn ($record) => $record->user->email),
 
                 Tables\Columns\TextColumn::make('course.title')
-                    ->label('Course')
+                    ->label('Khóa học')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->course->title),
 
                 Tables\Columns\TextColumn::make('final_amount')
-                    ->label('Amount')
+                    ->label('Số tiền')
                     ->money('VND', locale: 'vi')
                     ->sortable()
                     ->weight('bold')
-                    ->description(fn ($record) =>
-                    $record->discount_amount > 0
+                    ->description(fn ($record) => $record->discount_amount > 0
                         ? 'Giảm: ' . number_format($record->discount_amount) . '₫'
-                        : null
-                    ),
+                        : null),
 
                 Tables\Columns\TextColumn::make('coupon.code')
-                    ->label('Coupon')
+                    ->label('Mã giảm giá')
                     ->badge()
                     ->color('success')
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
+                    ->label('Trạng thái')
                     ->badge()
                     ->sortable()
                     ->color(fn (string $state): string => match ($state) {
@@ -175,43 +177,39 @@ class OrderResource extends Resource
                         'expired' => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'cancelled' => 'Cancelled',
-                        'expired' => 'Expired',
+                        'pending' => 'Chờ thanh toán',
+                        'paid' => 'Đã thanh toán',
+                        'cancelled' => 'Đã hủy',
+                        'expired' => 'Hết hạn',
                     }),
 
                 Tables\Columns\TextColumn::make('paid_at')
-                    ->label('Paid At')
+                    ->label('Thanh toán lúc')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->placeholder('—')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('Ngày tạo')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('expires_at')
-                    ->label('Expires')
+                    ->label('Hết hạn')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->color(fn ($record) =>
-                    $record->status === 'pending' && $record->expires_at->isPast()
-                        ? 'danger'
-                        : null
-                    )
+                    ->color(fn ($record) => $record->status === 'pending' && $record->expires_at->isPast() ? 'danger' : null)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'cancelled' => 'Cancelled',
-                        'expired' => 'Expired',
+                        'pending' => 'Chờ thanh toán',
+                        'paid' => 'Đã thanh toán',
+                        'cancelled' => 'Đã hủy',
+                        'expired' => 'Hết hạn',
                     ])
                     ->native(false),
 
@@ -222,34 +220,29 @@ class OrderResource extends Resource
 
                 Tables\Filters\Filter::make('has_coupon')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('coupon_id'))
-                    ->label('With Coupon'),
+                    ->label('Có mã giảm giá'),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('From'),
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Until'),
+                        Forms\Components\DatePicker::make('created_from')->label('Từ ngày'),
+                        Forms\Components\DatePicker::make('created_until')->label('Đến ngày'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['created_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
+                            ->when($data['created_from'], fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['created_until'], fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
+
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'From ' . \Carbon\Carbon::parse($data['created_from'])->toFormattedDateString();
+                            $indicators[] = 'Từ ' . \Carbon\Carbon::parse($data['created_from'])->format('d/m/Y');
                         }
+
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Until ' . \Carbon\Carbon::parse($data['created_until'])->toFormattedDateString();
+                            $indicators[] = 'Đến ' . \Carbon\Carbon::parse($data['created_until'])->format('d/m/Y');
                         }
+
                         return $indicators;
                     }),
             ])
@@ -258,33 +251,20 @@ class OrderResource extends Resource
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
 
-//                    Tables\Actions\Action::make('view_customer')
-//                        ->label('View Customer')
-//                        ->icon('heroicon-o-user')
-//                        ->url(fn ($record) => route('filament.admin.resources.users.edit', $record->user_id))
-//                        ->openUrlInNewTab(),
-//
-//                    Tables\Actions\Action::make('view_course')
-//                        ->label('View Course')
-//                        ->icon('heroicon-o-academic-cap')
-//                        ->url(fn ($record) => route('filament.admin.resources.courses.edit', $record->course_id))
-//                        ->openUrlInNewTab(),
-
                     Tables\Actions\Action::make('mark_as_paid')
-                        ->label('Mark as Paid')
+                        ->label('Đánh dấu đã thanh toán')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->visible(fn ($record) => $record->status === 'pending')
                         ->requiresConfirmation()
-                        ->modalHeading('Mark Order as Paid')
-                        ->modalDescription('Are you sure you want to manually mark this order as paid?')
+                        ->modalHeading('Đánh dấu đơn đã thanh toán')
+                        ->modalDescription('Bạn có chắc muốn xác nhận thủ công đơn hàng này đã thanh toán?')
                         ->action(function ($record) {
                             $record->update([
                                 'status' => 'paid',
                                 'paid_at' => now(),
                             ]);
 
-                            // Create enrollment
                             \App\Models\Enrollment::firstOrCreate([
                                 'user_id' => $record->user_id,
                                 'course_id' => $record->course_id,
@@ -293,10 +273,8 @@ class OrderResource extends Resource
                                 'enrolled_at' => now(),
                             ]);
 
-                            // Increment students count
                             $record->course->increment('current_students');
 
-                            // If used coupon, increment usage
                             if ($record->coupon_id) {
                                 \App\Models\CouponUsage::create([
                                     'coupon_id' => $record->coupon_id,
@@ -307,16 +285,16 @@ class OrderResource extends Resource
                                 $record->coupon->increment('usage_count');
                             }
                         })
-                        ->successNotificationTitle('Order marked as paid'),
+                        ->successNotificationTitle('Đã cập nhật đơn hàng thành đã thanh toán'),
 
                     Tables\Actions\Action::make('cancel')
-                        ->label('Cancel Order')
+                        ->label('Hủy đơn hàng')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->visible(fn ($record) => $record->status === 'pending')
                         ->requiresConfirmation()
                         ->action(fn ($record) => $record->update(['status' => 'cancelled']))
-                        ->successNotificationTitle('Order cancelled'),
+                        ->successNotificationTitle('Đã hủy đơn hàng'),
                 ]),
             ])
             ->bulkActions([
@@ -324,7 +302,7 @@ class OrderResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
 
                     Tables\Actions\BulkAction::make('mark_as_expired')
-                        ->label('Mark as Expired')
+                        ->label('Đánh dấu hết hạn')
                         ->icon('heroicon-o-clock')
                         ->color('gray')
                         ->action(fn ($records) => $records->each->update(['status' => 'expired']))
@@ -333,7 +311,7 @@ class OrderResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->poll('10s'); // Auto refresh mỗi 10 giây
+            ->poll('10s');
     }
 
     public static function getRelations(): array
@@ -360,6 +338,7 @@ class OrderResource extends Resource
     public static function getNavigationBadgeColor(): ?string
     {
         $pendingCount = static::getModel()::where('status', 'pending')->count();
+
         return $pendingCount > 0 ? 'warning' : null;
     }
 

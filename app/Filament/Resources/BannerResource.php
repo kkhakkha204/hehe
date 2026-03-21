@@ -16,7 +16,7 @@ class BannerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    protected static ?string $navigationLabel = 'Banners';
+    protected static ?string $navigationLabel = 'Banner';
 
     protected static ?string $navigationGroup = 'Nội dung';
 

@@ -17,11 +17,11 @@ class ComboResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
 
-    protected static ?string $navigationLabel = 'Combos';
+    protected static ?string $navigationLabel = 'Combo';
 
-    protected static ?string $modelLabel = 'Combo';
+    protected static ?string $modelLabel = 'combo';
 
-    protected static ?string $pluralModelLabel = 'Combos';
+    protected static ?string $pluralModelLabel = 'combo';
 
     protected static ?string $navigationGroup = 'Nội dung';
 

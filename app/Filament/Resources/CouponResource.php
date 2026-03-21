@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CouponResource\Pages;
 use App\Models\Coupon;
-use App\Models\Course;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,9 +17,13 @@ class CouponResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
-    protected static ?string $navigationLabel = 'Coupons';
+    protected static ?string $navigationLabel = 'Mã giảm giá';
 
-    protected static ?string $navigationGroup = 'Sales';
+    protected static ?string $modelLabel = 'mã giảm giá';
+
+    protected static ?string $pluralModelLabel = 'mã giảm giá';
+
+    protected static ?string $navigationGroup = 'Bán hàng';
 
     protected static ?int $navigationSort = 3;
 
@@ -28,84 +31,83 @@ class CouponResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Forms\Components\Section::make('Thông tin cơ bản')
                     ->schema([
                         Forms\Components\TextInput::make('code')
-                            ->label('Coupon Code')
+                            ->label('Mã giảm giá')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(50)
                             ->placeholder('SUMMER2026')
-                            ->helperText('Mã giảm giá (tự động viết hoa)')
+                            ->helperText('Mã giảm giá sẽ tự động viết hoa')
                             ->dehydrateStateUsing(fn ($state) => strtoupper($state))
                             ->formatStateUsing(fn ($state) => strtoupper($state)),
 
                         Forms\Components\Textarea::make('description')
-                            ->label('Description')
+                            ->label('Mô tả')
                             ->rows(2)
                             ->maxLength(500)
                             ->placeholder('Giảm giá mùa hè 2026'),
 
                         Forms\Components\Toggle::make('is_active')
-                            ->label('Active')
+                            ->label('Kích hoạt')
                             ->default(true)
-                            ->helperText('Bật/tắt mã giảm giá'),
+                            ->helperText('Bật hoặc tắt mã giảm giá'),
                     ])->columns(1),
 
-                Forms\Components\Section::make('Discount Settings')
+                Forms\Components\Section::make('Thiết lập giảm giá')
                     ->schema([
                         Forms\Components\Select::make('type')
-                            ->label('Discount Type')
+                            ->label('Loại giảm giá')
                             ->options([
-                                'percentage' => 'Percentage (%)',
-                                'fixed' => 'Fixed Amount (VNĐ)',
+                                'percentage' => 'Phần trăm (%)',
+                                'fixed' => 'Số tiền cố định (VNĐ)',
                             ])
                             ->required()
                             ->reactive()
                             ->default('percentage'),
 
                         Forms\Components\TextInput::make('value')
-                            ->label('Discount Value')
+                            ->label('Giá trị giảm')
                             ->required()
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn ($get) => $get('type') === 'percentage' ? '%' : 'VNĐ')
                             ->helperText(fn ($get) => $get('type') === 'percentage'
-                                ? 'Nhập số từ 0-100 (VD: 20 = giảm 20%)'
-                                : 'Nhập số tiền giảm (VD: 100000 = giảm 100.000đ)'
-                            ),
+                                ? 'Nhập số từ 0-100, ví dụ 20 nghĩa là giảm 20%'
+                                : 'Nhập số tiền giảm, ví dụ 100000 nghĩa là giảm 100.000đ'),
 
                         Forms\Components\TextInput::make('max_discount')
-                            ->label('Max Discount Amount')
+                            ->label('Giảm tối đa')
                             ->numeric()
                             ->minValue(0)
                             ->suffix('VNĐ')
-                            ->helperText('Giảm tối đa (chỉ áp dụng cho Percentage)')
+                            ->helperText('Chỉ áp dụng với mã giảm theo phần trăm')
                             ->visible(fn ($get) => $get('type') === 'percentage'),
 
                         Forms\Components\TextInput::make('min_order')
-                            ->label('Minimum Order Amount')
+                            ->label('Đơn tối thiểu')
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
                             ->suffix('VNĐ')
-                            ->helperText('Đơn hàng tối thiểu để áp dụng mã'),
+                            ->helperText('Giá trị đơn hàng tối thiểu để áp dụng mã'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Scope & Limits')
+                Forms\Components\Section::make('Phạm vi và giới hạn')
                     ->schema([
                         Forms\Components\Select::make('scope')
-                            ->label('Apply To')
+                            ->label('Áp dụng cho')
                             ->options([
-                                'all' => 'All Courses',
-                                'specific' => 'Specific Courses',
+                                'all' => 'Tất cả khóa học',
+                                'specific' => 'Khóa học cụ thể',
                             ])
                             ->required()
                             ->reactive()
                             ->default('all'),
 
                         Forms\Components\Select::make('courses')
-                            ->label('Select Courses')
+                            ->label('Chọn khóa học')
                             ->multiple()
                             ->relationship('courses', 'title')
                             ->preload()
@@ -114,32 +116,32 @@ class CouponResource extends Resource
                             ->helperText('Chọn các khóa học được áp dụng mã giảm giá'),
 
                         Forms\Components\TextInput::make('usage_limit')
-                            ->label('Total Usage Limit')
+                            ->label('Giới hạn tổng lượt dùng')
                             ->numeric()
                             ->minValue(1)
-                            ->placeholder('Unlimited')
-                            ->helperText('Tổng số lần mã có thể được sử dụng (để trống = không giới hạn)'),
+                            ->placeholder('Không giới hạn')
+                            ->helperText('Để trống nếu không giới hạn tổng số lượt dùng'),
 
                         Forms\Components\TextInput::make('per_user_limit')
-                            ->label('Per User Limit')
+                            ->label('Giới hạn mỗi học viên')
                             ->numeric()
                             ->minValue(1)
                             ->default(1)
                             ->required()
-                            ->helperText('Mỗi user được dùng tối đa bao nhiêu lần'),
+                            ->helperText('Mỗi học viên được dùng tối đa bao nhiêu lần'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Validity Period')
+                Forms\Components\Section::make('Thời gian hiệu lực')
                     ->schema([
                         Forms\Components\DateTimePicker::make('starts_at')
-                            ->label('Start Date')
+                            ->label('Ngày bắt đầu')
                             ->nullable()
-                            ->helperText('Để trống = có hiệu lực ngay'),
+                            ->helperText('Để trống nếu muốn có hiệu lực ngay'),
 
                         Forms\Components\DateTimePicker::make('expires_at')
-                            ->label('Expiry Date')
+                            ->label('Ngày hết hạn')
                             ->nullable()
-                            ->helperText('Để trống = không hết hạn'),
+                            ->helperText('Để trống nếu không giới hạn thời gian'),
                     ])->columns(2),
             ]);
     }
@@ -149,7 +151,7 @@ class CouponResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('code')
-                    ->label('Code')
+                    ->label('Mã')
                     ->searchable()
                     ->sortable()
                     ->copyable()
@@ -157,70 +159,61 @@ class CouponResource extends Resource
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Type')
+                    ->label('Loại')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'percentage' => 'success',
                         'fixed' => 'warning',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'percentage' => 'Percentage',
-                        'fixed' => 'Fixed',
+                        'percentage' => 'Phần trăm',
+                        'fixed' => 'Cố định',
                     }),
 
                 Tables\Columns\TextColumn::make('value')
-                    ->label('Value')
-                    ->formatStateUsing(fn ($record) =>
-                    $record->type === 'percentage'
+                    ->label('Giá trị')
+                    ->formatStateUsing(fn ($record) => $record->type === 'percentage'
                         ? $record->value . '%'
-                        : number_format($record->value) . '₫'
-                    )
+                        : number_format($record->value) . '₫')
                     ->color('success')
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('scope')
-                    ->label('Scope')
+                    ->label('Phạm vi')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'all' => 'info',
                         'specific' => 'warning',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'all' => 'All Courses',
-                        'specific' => 'Specific',
+                        'all' => 'Tất cả khóa học',
+                        'specific' => 'Cụ thể',
                     }),
 
                 Tables\Columns\TextColumn::make('usage_stats')
-                    ->label('Usage')
+                    ->label('Lượt dùng')
                     ->formatStateUsing(function ($record) {
                         $used = $record->usage_count;
                         $limit = $record->usage_limit ?? '∞';
+
                         return "{$used} / {$limit}";
                     })
-                    ->color(fn ($record) =>
-                    $record->usage_limit && $record->usage_count >= $record->usage_limit
-                        ? 'danger'
-                        : 'success'
-                    ),
+                    ->color(fn ($record) => $record->usage_limit && $record->usage_count >= $record->usage_limit ? 'danger' : 'success'),
 
                 Tables\Columns\IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label('Kích hoạt')
                     ->boolean()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('expires_at')
-                    ->label('Expires')
+                    ->label('Hết hạn')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->color(fn ($record) =>
-                    $record->expires_at && $record->expires_at->isPast()
-                        ? 'danger'
-                        : 'success'
-                    )
-                    ->placeholder('No expiry'),
+                    ->color(fn ($record) => $record->expires_at && $record->expires_at->isPast() ? 'danger' : 'success')
+                    ->placeholder('Không hết hạn'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('Ngày tạo')
                     ->dateTime('d/m/Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -228,38 +221,37 @@ class CouponResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->options([
-                        'percentage' => 'Percentage',
-                        'fixed' => 'Fixed',
+                        'percentage' => 'Phần trăm',
+                        'fixed' => 'Cố định',
                     ]),
 
                 Tables\Filters\SelectFilter::make('scope')
                     ->options([
-                        'all' => 'All Courses',
-                        'specific' => 'Specific Courses',
+                        'all' => 'Tất cả khóa học',
+                        'specific' => 'Khóa học cụ thể',
                     ]),
 
                 Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active Status')
+                    ->label('Trạng thái kích hoạt')
                     ->boolean()
-                    ->trueLabel('Active only')
-                    ->falseLabel('Inactive only')
+                    ->trueLabel('Chỉ đang bật')
+                    ->falseLabel('Chỉ đang tắt')
                     ->native(false),
 
                 Tables\Filters\Filter::make('expired')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('expires_at')->where('expires_at', '<', now()))
-                    ->label('Expired'),
+                    ->label('Đã hết hạn'),
 
                 Tables\Filters\Filter::make('active_now')
-                    ->query(fn (Builder $query): Builder =>
-                    $query->where('is_active', true)
-                        ->where(function($q) {
+                    ->query(fn (Builder $query): Builder => $query
+                        ->where('is_active', true)
+                        ->where(function ($q) {
                             $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
                         })
-                        ->where(function($q) {
+                        ->where(function ($q) {
                             $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-                        })
-                    )
-                    ->label('Currently Active'),
+                        }))
+                    ->label('Đang hoạt động'),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -268,6 +260,7 @@ class CouponResource extends Resource
                     Tables\Actions\DeleteAction::make(),
 
                     Tables\Actions\Action::make('duplicate')
+                        ->label('Nhân bản')
                         ->icon('heroicon-o-document-duplicate')
                         ->color('warning')
                         ->action(function (Coupon $record) {
@@ -283,8 +276,8 @@ class CouponResource extends Resource
                             return redirect()->route('filament.admin.resources.coupons.edit', $newCoupon);
                         })
                         ->requiresConfirmation()
-                        ->modalHeading('Duplicate Coupon')
-                        ->modalDescription('Create a copy of this coupon with "-COPY" suffix'),
+                        ->modalHeading('Nhân bản mã giảm giá')
+                        ->modalDescription('Tạo bản sao của mã này với hậu tố "-COPY"'),
                 ]),
             ])
             ->bulkActions([
@@ -292,14 +285,14 @@ class CouponResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
 
                     Tables\Actions\BulkAction::make('activate')
-                        ->label('Activate')
+                        ->label('Kích hoạt')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->action(fn ($records) => $records->each->update(['is_active' => true]))
                         ->deselectRecordsAfterCompletion(),
 
                     Tables\Actions\BulkAction::make('deactivate')
-                        ->label('Deactivate')
+                        ->label('Tắt kích hoạt')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->action(fn ($records) => $records->each->update(['is_active' => false]))

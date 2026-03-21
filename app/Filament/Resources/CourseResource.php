@@ -4,16 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CourseResource\Pages;
 use App\Models\Course;
-use App\Models\Category;
-use App\Models\Author;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Illuminate\Support\Str;
 
 class CourseResource extends Resource
 {
@@ -21,11 +19,11 @@ class CourseResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationLabel = 'Courses';
+    protected static ?string $navigationLabel = 'Khóa học';
 
-    protected static ?string $modelLabel = 'Course';
+    protected static ?string $modelLabel = 'khóa học';
 
-    protected static ?string $pluralModelLabel = 'Courses';
+    protected static ?string $pluralModelLabel = 'khóa học';
 
     protected static ?int $navigationSort = 3;
 
@@ -33,13 +31,12 @@ class CourseResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Tabs::make('Course Details')
+                Forms\Components\Tabs::make('Thông tin khóa học')
                     ->tabs([
-                        // TAB 1: INFORMATION
-                        Forms\Components\Tabs\Tab::make('Information')
+                        Forms\Components\Tabs\Tab::make('Thông tin')
                             ->icon('heroicon-o-information-circle')
                             ->schema([
-                                Forms\Components\Section::make('Basic Information')
+                                Forms\Components\Section::make('Thông tin cơ bản')
                                     ->schema([
                                         Forms\Components\TextInput::make('title')
                                             ->label('Tên khóa học')
@@ -47,16 +44,17 @@ class CourseResource extends Resource
                                             ->maxLength(255)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
-                                                if (!$get('slug')) {
+                                                if (! $get('slug')) {
                                                     $set('slug', Str::slug($state));
                                                 }
-                                                if (!$get('seo_title')) {
+
+                                                if (! $get('seo_title')) {
                                                     $set('seo_title', $state);
                                                 }
                                             }),
 
                                         Forms\Components\Select::make('level')
-                                            ->label('Level khóa học')
+                                            ->label('Cấp độ khóa học')
                                             ->required()
                                             ->options([
                                                 1 => 'Level 1',
@@ -73,8 +71,7 @@ class CourseResource extends Resource
                                             ->preload()
                                             ->required()
                                             ->createOptionForm([
-                                                Forms\Components\TextInput::make('name')
-                                                    ->required(),
+                                                Forms\Components\TextInput::make('name')->required(),
                                             ]),
 
                                         Forms\Components\Select::make('author_id')
@@ -84,13 +81,12 @@ class CourseResource extends Resource
                                             ->preload()
                                             ->required()
                                             ->createOptionForm([
-                                                Forms\Components\TextInput::make('name')
-                                                    ->required(),
+                                                Forms\Components\TextInput::make('name')->required(),
                                             ]),
                                     ])
                                     ->columns(2),
 
-                                Forms\Components\Section::make('Media')
+                                Forms\Components\Section::make('Hình ảnh')
                                     ->schema([
                                         Forms\Components\FileUpload::make('thumbnail')
                                             ->label('Ảnh thumbnail')
@@ -99,15 +95,13 @@ class CourseResource extends Resource
                                             ->directory('courses/thumbnails')
                                             ->visibility('public')
                                             ->imageEditor()
-                                            ->imageEditorAspectRatios([
-                                                '16:9',
-                                            ])
+                                            ->imageEditorAspectRatios(['16:9'])
                                             ->maxSize(3072)
-                                            ->helperText('Khuyến nghị: 1280x720px (16:9). Tối đa 3MB.')
+                                            ->helperText('Khuyến nghị: 1280x720px (16:9), tối đa 3MB.')
                                             ->columnSpanFull(),
                                     ]),
 
-                                Forms\Components\Section::make('Pricing')
+                                Forms\Components\Section::make('Giá bán')
                                     ->schema([
                                         Forms\Components\TextInput::make('price')
                                             ->label('Giá gốc (VNĐ)')
@@ -125,14 +119,14 @@ class CourseResource extends Resource
                                             ->lte('price'),
 
                                         Forms\Components\TextInput::make('duration')
-                                            ->label('Thời lượng khóa học (phút)')
+                                            ->label('Thời lượng khóa học')
                                             ->numeric()
                                             ->default(0)
                                             ->suffix('phút'),
                                     ])
                                     ->columns(3),
 
-                                Forms\Components\Section::make('Description')
+                                Forms\Components\Section::make('Mô tả')
                                     ->schema([
                                         Forms\Components\RichEditor::make('description')
                                             ->label('Mô tả chi tiết')
@@ -150,7 +144,7 @@ class CourseResource extends Resource
                                             ->columnSpanFull(),
                                     ]),
 
-                                Forms\Components\Section::make('Statistics')
+                                Forms\Components\Section::make('Thống kê')
                                     ->schema([
                                         Forms\Components\TextInput::make('current_students')
                                             ->label('Số học viên hiện tại')
@@ -168,7 +162,7 @@ class CourseResource extends Resource
                                     ])
                                     ->columns(2),
 
-                                Forms\Components\Section::make('Settings')
+                                Forms\Components\Section::make('Cài đặt')
                                     ->schema([
                                         Forms\Components\Toggle::make('is_published')
                                             ->label('Xuất bản')
@@ -179,30 +173,24 @@ class CourseResource extends Resource
                                             ->label('Nổi bật')
                                             ->default(false)
                                             ->helperText('Hiển thị ở mục khóa học nổi bật'),
-
-//                                        Forms\Components\TextInput::make('sort_order')
-//                                            ->label('Thứ tự sắp xếp')
-//                                            ->numeric()
-//                                            ->default(0),
                                     ])
                                     ->columns(3),
 
                                 Forms\Components\Section::make('SEO')
                                     ->schema([
                                         Forms\Components\TextInput::make('seo_title')
-                                            ->label('SEO Title')
+                                            ->label('Tiêu đề SEO')
                                             ->maxLength(60),
 
                                         Forms\Components\Textarea::make('seo_description')
-                                            ->label('SEO Description')
+                                            ->label('Mô tả SEO')
                                             ->maxLength(160)
                                             ->rows(3),
                                     ])
                                     ->collapsed(),
                             ]),
 
-                        // TAB 2: CURRICULUM (Nested Repeater)
-                        Forms\Components\Tabs\Tab::make('Curriculum')
+                        Forms\Components\Tabs\Tab::make('Giáo trình')
                             ->icon('heroicon-o-book-open')
                             ->schema([
                                 Forms\Components\Repeater::make('chapters')
@@ -218,7 +206,6 @@ class CourseResource extends Resource
                                             ->rows(2)
                                             ->columnSpanFull(),
 
-                                        // NESTED REPEATER - Lessons bên trong Chapter
                                         Forms\Components\Repeater::make('lessons')
                                             ->relationship()
                                             ->schema([
@@ -240,17 +227,17 @@ class CourseResource extends Resource
                                                             ->columnSpan(1),
 
                                                         Forms\Components\TextInput::make('duration')
-                                                            ->label('Thời lượng (phút)')
+                                                            ->label('Thời lượng')
                                                             ->numeric()
                                                             ->default(0)
                                                             ->suffix('phút')
                                                             ->columnSpan(1),
 
                                                         Forms\Components\Textarea::make('embed_code')
-                                                            ->label('Bunny.net Embed Code')
+                                                            ->label('Mã nhúng Bunny.net')
                                                             ->rows(4)
                                                             ->placeholder('<iframe src="https://iframe.mediadelivery.net/embed/..." ...></iframe>')
-                                                            ->helperText('Dán code <iframe> từ Bunny.net')
+                                                            ->helperText('Dán mã iframe từ Bunny.net')
                                                             ->columnSpan(2),
 
                                                         Forms\Components\RichEditor::make('content')
@@ -302,7 +289,7 @@ class CourseResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('thumbnail')
-                    ->label('Thumbnail')
+                    ->label('Ảnh')
                     ->size(80),
 
                 Tables\Columns\TextColumn::make('title')
@@ -324,7 +311,7 @@ class CourseResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('level')
-                    ->label('Level')
+                    ->label('Cấp độ')
                     ->formatStateUsing(fn (?int $state): string => 'Level ' . ($state ?? 1))
                     ->badge()
                     ->sortable(),

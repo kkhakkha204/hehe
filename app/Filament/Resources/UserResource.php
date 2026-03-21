@@ -18,9 +18,13 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationLabel = 'Users';
+    protected static ?string $navigationLabel = 'Người dùng';
 
-    protected static ?string $navigationGroup = 'User Management';
+    protected static ?string $modelLabel = 'người dùng';
+
+    protected static ?string $pluralModelLabel = 'người dùng';
+
+    protected static ?string $navigationGroup = 'Quản lý người dùng';
 
     protected static ?int $navigationSort = 1;
 
@@ -28,16 +32,16 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('User Information')
+                Forms\Components\Section::make('Thông tin người dùng')
                     ->schema([
                         Forms\Components\TextInput::make('name')
-                            ->label('Full Name')
+                            ->label('Họ và tên')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('Nguyen Van A'),
+                            ->placeholder('Nguyễn Văn A'),
 
                         Forms\Components\TextInput::make('username')
-                            ->label('Username')
+                            ->label('Tên đăng nhập')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255)
@@ -54,44 +58,42 @@ class UserResource extends Resource
                             ->placeholder('user@example.com'),
 
                         Forms\Components\TextInput::make('phone')
-                            ->label('Phone Number')
+                            ->label('Số điện thoại')
                             ->tel()
                             ->maxLength(20)
                             ->placeholder('0123456789'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Account Settings')
+                Forms\Components\Section::make('Cài đặt tài khoản')
                     ->schema([
                         Forms\Components\Select::make('role')
-                            ->label('Role')
+                            ->label('Vai trò')
                             ->options([
-                                'admin' => 'Admin',
-                                'student' => 'Student',
+                                'admin' => 'Quản trị viên',
+                                'student' => 'Học viên',
                             ])
                             ->required()
                             ->default('student')
                             ->native(false),
 
                         Forms\Components\TextInput::make('password')
-                            ->label('Password')
+                            ->label('Mật khẩu')
                             ->password()
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
-                            ->placeholder('Enter password')
-                            ->helperText(fn (string $context): string =>
-                            $context === 'create'
-                                ? 'Password is required for new users'
-                                : 'Leave blank to keep current password'
-                            ),
+                            ->placeholder('Nhập mật khẩu')
+                            ->helperText(fn (string $context): string => $context === 'create'
+                                ? 'Mật khẩu là bắt buộc khi tạo người dùng mới'
+                                : 'Để trống nếu muốn giữ mật khẩu hiện tại'),
 
                         Forms\Components\TextInput::make('password_confirmation')
-                            ->label('Confirm Password')
+                            ->label('Xác nhận mật khẩu')
                             ->password()
                             ->dehydrated(false)
                             ->required(fn (string $context): bool => $context === 'create')
                             ->same('password')
-                            ->placeholder('Confirm password'),
+                            ->placeholder('Nhập lại mật khẩu'),
                     ])->columns(2),
             ]);
     }
@@ -106,7 +108,7 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Name')
+                    ->label('Tên')
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
@@ -120,14 +122,14 @@ class UserResource extends Resource
                     ->icon('heroicon-o-envelope'),
 
                 Tables\Columns\TextColumn::make('phone')
-                    ->label('Phone')
+                    ->label('Điện thoại')
                     ->searchable()
                     ->placeholder('—')
                     ->copyable()
                     ->icon('heroicon-o-phone'),
 
                 Tables\Columns\TextColumn::make('role')
-                    ->label('Role')
+                    ->label('Vai trò')
                     ->badge()
                     ->sortable()
                     ->color(fn (string $state): string => match ($state) {
@@ -135,46 +137,42 @@ class UserResource extends Resource
                         'student' => 'success',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'admin' => 'Admin',
-                        'student' => 'Student',
+                        'admin' => 'Quản trị viên',
+                        'student' => 'Học viên',
                     }),
 
                 Tables\Columns\TextColumn::make('enrollments_count')
-                    ->label('Courses')
+                    ->label('Khóa học')
                     ->counts('enrollments')
                     ->sortable()
                     ->color('primary')
                     ->icon('heroicon-o-academic-cap'),
 
                 Tables\Columns\TextColumn::make('orders_count')
-                    ->label('Orders')
+                    ->label('Đơn hàng')
                     ->counts('orders')
                     ->sortable()
                     ->color('warning')
                     ->icon('heroicon-o-shopping-cart'),
 
                 Tables\Columns\TextColumn::make('total_spent')
-                    ->label('Total Spent')
-                    ->getStateUsing(fn ($record) =>
-                    $record->orders()->where('status', 'paid')->sum('final_amount')
-                    )
+                    ->label('Tổng chi tiêu')
+                    ->getStateUsing(fn ($record) => $record->orders()->where('status', 'paid')->sum('final_amount'))
                     ->money('VND', locale: 'vi')
                     ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->withSum(['orders as total_spent' => fn ($query) =>
-                        $query->where('status', 'paid')
-                        ], 'final_amount')
+                        return $query->withSum(['orders as total_spent' => fn ($query) => $query->where('status', 'paid')], 'final_amount')
                             ->orderBy('total_spent', $direction);
                     })
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Joined')
+                    ->label('Ngày tham gia')
                     ->dateTime('d/m/Y')
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('email_verified_at')
-                    ->label('Verified')
+                    ->label('Đã xác minh')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -182,43 +180,37 @@ class UserResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->options([
-                        'admin' => 'Admin',
-                        'student' => 'Student',
+                        'admin' => 'Quản trị viên',
+                        'student' => 'Học viên',
                     ])
                     ->native(false),
 
                 Tables\Filters\TernaryFilter::make('email_verified_at')
-                    ->label('Email Verified')
+                    ->label('Xác minh email')
                     ->nullable()
-                    ->trueLabel('Verified')
-                    ->falseLabel('Not Verified')
+                    ->trueLabel('Đã xác minh')
+                    ->falseLabel('Chưa xác minh')
                     ->native(false),
 
                 Tables\Filters\Filter::make('has_enrollments')
                     ->query(fn (Builder $query): Builder => $query->has('enrollments'))
-                    ->label('With Courses'),
+                    ->label('Có khóa học'),
 
                 Tables\Filters\Filter::make('has_orders')
                     ->query(fn (Builder $query): Builder => $query->has('orders'))
-                    ->label('With Orders'),
+                    ->label('Có đơn hàng'),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Joined From'),
+                            ->label('Từ ngày'),
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Joined Until'),
+                            ->label('Đến ngày'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['created_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
+                            ->when($data['created_from'], fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['created_until'], fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
                     }),
             ])
             ->actions([
@@ -227,43 +219,41 @@ class UserResource extends Resource
                     Tables\Actions\EditAction::make(),
 
                     Tables\Actions\Action::make('view_enrollments')
-                        ->label('View Courses')
+                        ->label('Xem khóa học')
                         ->icon('heroicon-o-academic-cap')
                         ->color('success')
-                        ->modalHeading(fn ($record) => $record->name . "'s Enrolled Courses")
+                        ->modalHeading(fn ($record) => 'Khóa học của ' . $record->name)
                         ->modalContent(fn ($record) => view('filament.resources.user-resource.modals.enrollments', ['user' => $record]))
                         ->modalSubmitAction(false)
-                        ->modalCancelActionLabel('Close'),
+                        ->modalCancelActionLabel('Đóng'),
 
                     Tables\Actions\Action::make('view_orders')
-                        ->label('View Orders')
+                        ->label('Xem đơn hàng')
                         ->icon('heroicon-o-shopping-cart')
                         ->color('warning')
-                        ->modalHeading(fn ($record) => $record->name . "'s Orders")
+                        ->modalHeading(fn ($record) => 'Đơn hàng của ' . $record->name)
                         ->modalContent(fn ($record) => view('filament.resources.user-resource.modals.orders', ['user' => $record]))
                         ->modalSubmitAction(false)
-                        ->modalCancelActionLabel('Close'),
+                        ->modalCancelActionLabel('Đóng'),
 
                     Tables\Actions\Action::make('toggle_role')
-                        ->label(fn ($record) => $record->isAdmin() ? 'Demote to Student' : 'Promote to Admin')
+                        ->label(fn ($record) => $record->isAdmin() ? 'Hạ xuống học viên' : 'Nâng lên quản trị viên')
                         ->icon(fn ($record) => $record->isAdmin() ? 'heroicon-o-arrow-down' : 'heroicon-o-arrow-up')
                         ->color(fn ($record) => $record->isAdmin() ? 'warning' : 'success')
                         ->requiresConfirmation()
-                        ->modalHeading(fn ($record) => $record->isAdmin() ? 'Demote to Student?' : 'Promote to Admin?')
-                        ->modalDescription(fn ($record) =>
-                        $record->isAdmin()
-                            ? 'This user will lose admin access.'
-                            : 'This user will gain full admin access.'
-                        )
+                        ->modalHeading(fn ($record) => $record->isAdmin() ? 'Hạ xuống học viên?' : 'Nâng lên quản trị viên?')
+                        ->modalDescription(fn ($record) => $record->isAdmin()
+                            ? 'Người dùng này sẽ mất quyền quản trị.'
+                            : 'Người dùng này sẽ được cấp toàn bộ quyền quản trị.')
                         ->action(fn ($record) => $record->update([
-                            'role' => $record->isAdmin() ? 'student' : 'admin'
+                            'role' => $record->isAdmin() ? 'student' : 'admin',
                         ]))
-                        ->successNotificationTitle('Role updated'),
+                        ->successNotificationTitle('Đã cập nhật vai trò'),
 
                     Tables\Actions\DeleteAction::make()
                         ->requiresConfirmation()
-                        ->modalHeading('Delete User')
-                        ->modalDescription('Are you sure? This will also delete all orders and enrollments.')
+                        ->modalHeading('Xóa người dùng')
+                        ->modalDescription('Bạn có chắc không? Hành động này sẽ xóa cả đơn hàng và ghi danh liên quan.')
                         ->before(fn ($record) => $record->enrollments()->delete()),
                 ]),
             ])
@@ -272,7 +262,7 @@ class UserResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
 
                     Tables\Actions\BulkAction::make('promote_to_admin')
-                        ->label('Promote to Admin')
+                        ->label('Nâng lên quản trị viên')
                         ->icon('heroicon-o-arrow-up')
                         ->color('success')
                         ->action(fn ($records) => $records->each->update(['role' => 'admin']))
@@ -280,7 +270,7 @@ class UserResource extends Resource
                         ->requiresConfirmation(),
 
                     Tables\Actions\BulkAction::make('demote_to_student')
-                        ->label('Demote to Student')
+                        ->label('Hạ xuống học viên')
                         ->icon('heroicon-o-arrow-down')
                         ->color('warning')
                         ->action(fn ($records) => $records->each->update(['role' => 'student']))

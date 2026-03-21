@@ -20,24 +20,24 @@ class UserStatsWidget extends BaseWidget
             ->count();
 
         return [
-            Stat::make('Total Users', number_format($totalUsers))
-                ->description('All registered users')
+            Stat::make('Tổng người dùng', number_format($totalUsers))
+                ->description('Tất cả tài khoản đã đăng ký')
                 ->descriptionIcon('heroicon-o-users')
                 ->color('primary')
                 ->chart($this->getUserGrowthChart(7)),
 
-            Stat::make('Admins', number_format($admins))
-                ->description('System administrators')
+            Stat::make('Quản trị viên', number_format($admins))
+                ->description('Tài khoản có quyền quản trị')
                 ->descriptionIcon('heroicon-o-shield-check')
                 ->color('danger'),
 
-            Stat::make('Students', number_format($students))
-                ->description('Active learners')
+            Stat::make('Học viên', number_format($students))
+                ->description('Người dùng đang học')
                 ->descriptionIcon('heroicon-o-academic-cap')
                 ->color('success'),
 
-            Stat::make('New Today', number_format($newUsersToday))
-                ->description($newUsersThisMonth . ' this month')
+            Stat::make('Mới hôm nay', number_format($newUsersToday))
+                ->description($newUsersThisMonth . ' tài khoản trong tháng này')
                 ->descriptionIcon('heroicon-o-user-plus')
                 ->color('warning'),
         ];
@@ -46,11 +46,13 @@ class UserStatsWidget extends BaseWidget
     private function getUserGrowthChart(int $days): array
     {
         $data = [];
+
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $count = User::whereDate('created_at', $date)->count();
             $data[] = $count;
         }
+
         return $data;
     }
 }

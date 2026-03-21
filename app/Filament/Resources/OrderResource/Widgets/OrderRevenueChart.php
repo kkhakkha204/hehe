@@ -9,7 +9,7 @@ use Flowframe\Trend\TrendValue;
 
 class OrderRevenueChart extends ChartWidget
 {
-    protected static ?string $heading = 'Revenue (Last 30 Days)';
+    protected static ?string $heading = 'Doanh thu 30 ngày gần nhất';
 
     protected static ?int $sort = 2;
 
@@ -26,7 +26,7 @@ class OrderRevenueChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue (₫)',
+                    'label' => 'Doanh thu (₫)',
                     'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                     'borderColor' => 'rgb(59, 130, 246)',

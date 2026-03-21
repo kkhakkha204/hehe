@@ -17,23 +17,23 @@ class CouponStatsWidget extends BaseWidget
         $totalDiscountGiven = CouponUsage::sum('discount_amount');
 
         return [
-            Stat::make('Total Coupons', $totalCoupons)
-                ->description('All time')
+            Stat::make('Tổng mã giảm giá', $totalCoupons)
+                ->description('Toàn thời gian')
                 ->descriptionIcon('heroicon-o-ticket')
                 ->color('primary'),
 
-            Stat::make('Active Coupons', $activeCoupons)
-                ->description('Currently active')
+            Stat::make('Mã đang hoạt động', $activeCoupons)
+                ->description('Hiện đang áp dụng')
                 ->descriptionIcon('heroicon-o-check-circle')
                 ->color('success'),
 
-            Stat::make('Total Uses', number_format($totalUsages))
-                ->description('Times coupons were used')
+            Stat::make('Tổng lượt sử dụng', number_format($totalUsages))
+                ->description('Số lần mã đã được dùng')
                 ->descriptionIcon('heroicon-o-shopping-cart')
                 ->color('warning'),
 
-            Stat::make('Total Discount Given', number_format($totalDiscountGiven) . '₫')
-                ->description('Total savings for customers')
+            Stat::make('Tổng tiền đã giảm', number_format($totalDiscountGiven) . '₫')
+                ->description('Tổng ưu đãi đã áp dụng cho khách hàng')
                 ->descriptionIcon('heroicon-o-currency-dollar')
                 ->color('danger'),
         ];

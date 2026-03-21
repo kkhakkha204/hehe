@@ -26,6 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('Quản trị Mew Art')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
