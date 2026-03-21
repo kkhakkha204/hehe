@@ -120,7 +120,8 @@ class BannerResource extends Resource
                     ->falseLabel('Đã tắt'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalWidth('4xl'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

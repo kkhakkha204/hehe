@@ -3,24 +3,24 @@
 namespace App\Filament\Resources\CouponResource\Pages;
 
 use App\Filament\Resources\CouponResource;
+use App\Filament\Resources\Pages\SinglePageListRecords;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 
-class ListCoupons extends ListRecords
+class ListCoupons extends SinglePageListRecords
 {
     protected static string $resource = CouponResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->modalWidth('5xl')
+                ->label('Tạo mã giảm giá'),
         ];
     }
 
     protected function getHeaderWidgets(): array
     {
-        return [
-            CouponResource\Widgets\CouponStatsWidget::class,
-        ];
+        return [];
     }
 }

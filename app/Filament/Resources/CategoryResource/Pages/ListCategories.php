@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\CategoryResource\Pages;
 
 use App\Filament\Resources\CategoryResource;
+use App\Filament\Resources\Pages\SinglePageListRecords;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 
-class ListCategories extends ListRecords
+class ListCategories extends SinglePageListRecords
 {
     protected static string $resource = CategoryResource::class;
 
@@ -14,6 +14,7 @@ class ListCategories extends ListRecords
     {
         return [
             Actions\CreateAction::make()
+                ->modalWidth('3xl')
                 ->label('Tạo danh mục mới'),
         ];
     }

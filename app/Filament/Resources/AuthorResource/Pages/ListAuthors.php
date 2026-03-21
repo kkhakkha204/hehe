@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\AuthorResource\Pages;
 
 use App\Filament\Resources\AuthorResource;
+use App\Filament\Resources\Pages\SinglePageListRecords;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 
-class ListAuthors extends ListRecords
+class ListAuthors extends SinglePageListRecords
 {
     protected static string $resource = AuthorResource::class;
 
@@ -14,6 +14,7 @@ class ListAuthors extends ListRecords
     {
         return [
             Actions\CreateAction::make()
+                ->modalWidth('4xl')
                 ->label('Thêm giảng viên'),
         ];
     }

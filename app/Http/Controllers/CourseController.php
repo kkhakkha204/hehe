@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
 use App\Models\Category;
 use App\Models\Combo;
+use App\Models\Course;
+use App\Models\LessonProgress;
 use Illuminate\Http\Request;
-use App\Models\Banner;
 
 class CourseController extends Controller
 {
@@ -15,25 +15,21 @@ class CourseController extends Controller
         $query = Course::with(['category', 'author'])
             ->where('is_published', true);
 
-        // Tìm kiếm
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->search . '%')
                     ->orWhere('description', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Filter theo category (nhiều category)
         if ($request->filled('categories')) {
             $query->whereIn('category_id', $request->categories);
         }
 
-        // Filter theo level (nhiều level)
         if ($request->filled('levels')) {
             $query->whereIn('level', $request->levels);
         }
 
-        // Sort
         switch ($request->get('sort', 'newest')) {
             case 'price_asc':
                 $query->orderByRaw('COALESCE(sale_price, price) ASC');
@@ -44,7 +40,7 @@ class CourseController extends Controller
             case 'oldest':
                 $query->oldest();
                 break;
-            default: // newest
+            default:
                 $query->latest();
                 break;
         }
@@ -65,12 +61,11 @@ class CourseController extends Controller
             ->take(12)
             ->get();
 
-        // Nếu là AJAX request (load more)
         if ($request->ajax()) {
             return response()->json([
                 'html' => view('courses.partials.course-grid', compact('courses'))->render(),
                 'hasMore' => $courses->hasMorePages(),
-                'nextPage' => $courses->currentPage() + 1
+                'nextPage' => $courses->currentPage() + 1,
             ]);
         }
 
@@ -84,10 +79,8 @@ class CourseController extends Controller
             ->where('is_published', true)
             ->firstOrFail();
 
-        // Tăng lượt xem
         $course->increment('views');
 
-        // Lấy 3 khóa học liên quan (cùng category, khác khóa hiện tại)
         $relatedCourses = Course::with(['author'])
             ->where('category_id', $course->category_id)
             ->where('id', '!=', $course->id)
@@ -96,14 +89,40 @@ class CourseController extends Controller
             ->limit(3)
             ->get();
 
-        // Kiểm tra học viên đã mua khóa học chưa
         $isEnrolled = false;
+        $progressPercent = 0;
+        $resumeLesson = null;
+
         if (auth()->check()) {
-            $isEnrolled = auth()->user()->enrollments()
+            $user = auth()->user();
+
+            $isEnrolled = $user->enrollments()
                 ->where('course_id', $course->id)
                 ->exists();
+
+            if ($isEnrolled) {
+                $completedLessons = LessonProgress::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->whereNotNull('completed_at')
+                    ->count();
+
+                $totalLessons = $course->chapters->pluck('lessons')->flatten()->count();
+
+                $progressPercent = $totalLessons > 0
+                    ? (int) round(($completedLessons / $totalLessons) * 100)
+                    : 0;
+
+                $resumeLesson = LessonProgress::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->latest('last_viewed_at')
+                    ->with('lesson')
+                    ->first()
+                    ?->lesson;
+            }
         }
 
-        return view('courses.show', compact('course', 'relatedCourses', 'isEnrolled'));
+        return view('courses.show', compact('course', 'relatedCourses', 'isEnrolled', 'progressPercent', 'resumeLesson'));
     }
 }

@@ -68,7 +68,6 @@ class CourseResource extends Resource
                                             ->label('Danh mục')
                                             ->relationship('category', 'name')
                                             ->searchable()
-                                            ->preload()
                                             ->required()
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('name')->required(),
@@ -78,7 +77,6 @@ class CourseResource extends Resource
                                             ->label('Giảng viên')
                                             ->relationship('author', 'name')
                                             ->searchable()
-                                            ->preload()
                                             ->required()
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('name')->required(),
@@ -368,7 +366,8 @@ class CourseResource extends Resource
                     ->label('Nổi bật'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalWidth('7xl'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

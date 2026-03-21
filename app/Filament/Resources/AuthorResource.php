@@ -167,8 +167,10 @@ class AuthorResource extends Resource
                     ->falseLabel('Đã ẩn'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalWidth('4xl'),
+                Tables\Actions\EditAction::make()
+                    ->modalWidth('4xl'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

@@ -69,6 +69,11 @@ class User extends Authenticatable implements FilamentUser
             ->withTimestamps();
     }
 
+    public function lessonProgress()
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
 // Helper: Check đã mua khóa học chưa
     public function hasEnrolled($courseId): bool
     {

@@ -110,7 +110,6 @@ class CouponResource extends Resource
                             ->label('Chọn khóa học')
                             ->multiple()
                             ->relationship('courses', 'title')
-                            ->preload()
                             ->searchable()
                             ->visible(fn ($get) => $get('scope') === 'specific')
                             ->helperText('Chọn các khóa học được áp dụng mã giảm giá'),
@@ -255,8 +254,10 @@ class CouponResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\ViewAction::make()
+                        ->modalWidth('5xl'),
+                    Tables\Actions\EditAction::make()
+                        ->modalWidth('5xl'),
                     Tables\Actions\DeleteAction::make(),
 
                     Tables\Actions\Action::make('duplicate')

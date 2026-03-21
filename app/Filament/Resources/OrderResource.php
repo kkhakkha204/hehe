@@ -66,7 +66,6 @@ class OrderResource extends Resource
                             ->label('Khách hàng')
                             ->relationship('user', 'name')
                             ->searchable()
-                            ->preload()
                             ->disabled()
                             ->dehydrated(false),
 
@@ -74,7 +73,6 @@ class OrderResource extends Resource
                             ->label('Khóa học')
                             ->relationship('course', 'title')
                             ->searchable()
-                            ->preload()
                             ->disabled()
                             ->dehydrated(false),
                     ])->columns(2),
@@ -248,8 +246,10 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\ViewAction::make()
+                        ->modalWidth('5xl'),
+                    Tables\Actions\EditAction::make()
+                        ->modalWidth('5xl'),
 
                     Tables\Actions\Action::make('mark_as_paid')
                         ->label('Đánh dấu đã thanh toán')
@@ -310,8 +310,7 @@ class OrderResource extends Resource
                         ->requiresConfirmation(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc')
-            ->poll('10s');
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -344,6 +343,10 @@ class OrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['user', 'course', 'coupon']);
+        return parent::getEloquentQuery()->with([
+            'user:id,name,email',
+            'course:id,title',
+            'coupon:id,code',
+        ]);
     }
 }

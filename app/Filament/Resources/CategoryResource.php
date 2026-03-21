@@ -141,7 +141,8 @@ class CategoryResource extends Resource
                     ->falseLabel('Đã ẩn'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalWidth('3xl'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

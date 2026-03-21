@@ -26,7 +26,7 @@ Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.
 Route::get('/combos/{combo:slug}', [ComboController::class, 'show'])->name('combos.show');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('profile.edit', ['tab' => 'courses']);
 })->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     // Learning
     Route::get('/learning/{course:slug}', [LearningController::class, 'show'])->name('learning.show');
     Route::get('/learning/{course:slug}/{lesson}', [LearningController::class, 'lesson'])->name('learning.lesson');
+    Route::post('/learning/{course:slug}/{lesson}/progress', [LearningController::class, 'updateProgress'])->name('learning.progress');
 });
 
 require __DIR__.'/auth.php';

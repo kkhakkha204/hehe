@@ -3,17 +3,19 @@
 namespace App\Filament\Resources\ComboResource\Pages;
 
 use App\Filament\Resources\ComboResource;
+use App\Filament\Resources\Pages\SinglePageListRecords;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 
-class ListCombos extends ListRecords
+class ListCombos extends SinglePageListRecords
 {
     protected static string $resource = ComboResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->modalWidth('5xl')
+                ->label('Thêm combo'),
         ];
     }
 }

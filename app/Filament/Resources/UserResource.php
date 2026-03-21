@@ -215,8 +215,10 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\ViewAction::make()
+                        ->modalWidth('5xl'),
+                    Tables\Actions\EditAction::make()
+                        ->modalWidth('5xl'),
 
                     Tables\Actions\Action::make('view_enrollments')
                         ->label('Xem khóa học')

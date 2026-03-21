@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\CourseResource\Pages;
 
 use App\Filament\Resources\CourseResource;
+use App\Filament\Resources\Pages\SinglePageListRecords;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 
-class ListCourses extends ListRecords
+class ListCourses extends SinglePageListRecords
 {
     protected static string $resource = CourseResource::class;
 
@@ -14,6 +14,7 @@ class ListCourses extends ListRecords
     {
         return [
             Actions\CreateAction::make()
+                ->modalWidth('7xl')
                 ->label('Tạo khóa học mới'),
         ];
     }

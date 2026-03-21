@@ -97,7 +97,6 @@ class ComboResource extends Resource
                             ->label('Chọn khóa học')
                             ->relationship('courses', 'title')
                             ->multiple()
-                            ->preload()
                             ->searchable()
                             ->helperText('Chọn các khóa học sẽ hiển thị trong combo')
                             ->columnSpanFull(),
@@ -144,7 +143,8 @@ class ComboResource extends Resource
             ])
             ->defaultSort('sort_order')
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalWidth('5xl'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
