@@ -70,6 +70,7 @@ class CourseResource extends Resource
                                                         'h3',
                                                         'blockquote',
                                                     ])
+                                                    ->extraAttributes(['style' => 'max-height: 300px; overflow-y: auto; resize: vertical;'])
                                                     ->columnSpanFull(),
 
                                                 Forms\Components\Select::make('category_id')
@@ -273,6 +274,7 @@ class CourseResource extends Resource
                                                                 'orderedList',
                                                                 'link',
                                                             ])
+                                                            ->extraAttributes(['style' => 'max-height: 300px; overflow-y: auto; resize: vertical;'])
                                                             ->columnSpan(2),
 
                                                         Forms\Components\Toggle::make('is_preview')
