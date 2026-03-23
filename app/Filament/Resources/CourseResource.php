@@ -4,14 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CourseResource\Pages;
 use App\Models\Course;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Closure;
 use Illuminate\Support\Str;
 
 class CourseResource extends Resource
@@ -37,177 +37,181 @@ class CourseResource extends Resource
                         Forms\Components\Tabs\Tab::make('Thông tin')
                             ->icon('heroicon-o-information-circle')
                             ->schema([
-                                Forms\Components\Section::make('Thông tin cơ bản')
+                                Forms\Components\Grid::make(12)
                                     ->schema([
-                                        Forms\Components\TextInput::make('title')
-                                            ->label('Tên khóa học')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->live(onBlur: true)
-                                            ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
-                                                if (! $get('slug')) {
-                                                    $set('slug', Str::slug($state));
-                                                }
+                                        Forms\Components\Section::make('Thông tin cơ bản')
+                                            ->schema([
+                                                Forms\Components\TextInput::make('title')
+                                                    ->label('Tên khóa học')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->live(onBlur: true)
+                                                    ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                                        if (! $get('slug')) {
+                                                            $set('slug', Str::slug($state));
+                                                        }
 
-                                                if (! $get('seo_title')) {
-                                                    $set('seo_title', $state);
-                                                }
-                                            }),
+                                                        if (! $get('seo_title')) {
+                                                            $set('seo_title', $state);
+                                                        }
+                                                    })
+                                                    ->columnSpanFull(),
 
-                                        Forms\Components\Select::make('level')
-                                            ->label('Cấp độ khóa học')
-                                            ->required()
-                                            ->options([
-                                                1 => 'Level 1',
-                                                2 => 'Level 2',
-                                                3 => 'Level 3',
+                                                Forms\Components\RichEditor::make('description')
+                                                    ->label('Mô tả chi tiết')
+                                                    ->toolbarButtons([
+                                                        'bold',
+                                                        'italic',
+                                                        'underline',
+                                                        'bulletList',
+                                                        'orderedList',
+                                                        'link',
+                                                        'h2',
+                                                        'h3',
+                                                        'blockquote',
+                                                    ])
+                                                    ->columnSpanFull(),
+
+                                                Forms\Components\Select::make('category_id')
+                                                    ->label('Danh mục')
+                                                    ->relationship('category', 'name')
+                                                    ->preload()
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->createOptionForm([
+                                                        Forms\Components\TextInput::make('name')->required(),
+                                                    ]),
+
+                                                Forms\Components\Select::make('author_id')
+                                                    ->label('Giảng viên')
+                                                    ->relationship('author', 'name')
+                                                    ->preload()
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->createOptionForm([
+                                                        Forms\Components\TextInput::make('name')->required(),
+                                                    ]),
+
+                                                Forms\Components\Select::make('level')
+                                                    ->label('Cấp độ khóa học')
+                                                    ->required()
+                                                    ->options([
+                                                        1 => 'Level 1',
+                                                        2 => 'Level 2',
+                                                        3 => 'Level 3',
+                                                    ])
+                                                    ->default(1)
+                                                    ->native(false),
+
+                                                Forms\Components\Grid::make(2)
+                                                    ->schema([
+                                                        Forms\Components\Toggle::make('is_published')
+                                                            ->label('Xuất bản')
+                                                            ->default(false),
+
+                                                        Forms\Components\Toggle::make('is_featured')
+                                                            ->label('Nổi bật')
+                                                            ->default(false),
+                                                    ])
+                                                    ->columnSpan(1)
+                                                    ->extraAttributes(['style' => 'margin-top: 36px;']),
                                             ])
-                                            ->default(1)
-                                            ->native(false),
+                                            ->columns(2)
+                                            ->columnSpan(8),
 
-                                        Forms\Components\Select::make('category_id')
-                                            ->label('Danh mục')
-                                            ->relationship('category', 'name')
-                                            ->preload()
-                                            ->searchable()
-                                            ->required()
-                                            ->createOptionForm([
-                                                Forms\Components\TextInput::make('name')->required(),
-                                            ]),
+                                        Forms\Components\Group::make([
+                                            Forms\Components\Section::make('Giá bán')
+                                                ->schema([
+                                                    Forms\Components\TextInput::make('price')
+                                                        ->label('Giá gốc (VNĐ)')
+                                                        ->required()
+                                                        ->prefix('₫')
+                                                        ->default(0)
+                                                        ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
+                                                        ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
+                                                        ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
+                                                        ->stripCharacters(','),
 
-                                        Forms\Components\Select::make('author_id')
-                                            ->label('Giảng viên')
-                                            ->relationship('author', 'name')
-                                            ->preload()
-                                            ->searchable()
-                                            ->required()
-                                            ->createOptionForm([
-                                                Forms\Components\TextInput::make('name')->required(),
-                                            ]),
-                                    ])
-                                    ->columns(2),
+                                                    Forms\Components\TextInput::make('sale_price')
+                                                        ->label('Giá khuyến mãi (VNĐ)')
+                                                        ->prefix('₫')
+                                                        ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
+                                                        ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
+                                                        ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
+                                                        ->stripCharacters(',')
+                                                        ->rule(function (Get $get) {
+                                                            return function (string $attribute, $value, Closure $fail) use ($get): void {
+                                                                if (! filled($value)) {
+                                                                    return;
+                                                                }
 
-                                Forms\Components\Section::make('Hình ảnh')
-                                    ->schema([
-                                        Forms\Components\FileUpload::make('thumbnail')
-                                            ->label('Ảnh thumbnail')
-                                            ->image()
-                                            ->disk('public')
-                                            ->directory('courses/thumbnails')
-                                            ->visibility('public')
-                                            ->imageEditor()
-                                            ->imageEditorAspectRatios(['16:9'])
-                                            ->maxSize(3072)
-                                            ->helperText('Khuyến nghị: 1280x720px (16:9), tối đa 3MB.')
+                                                                $salePrice = (int) str_replace(',', '', (string) $value);
+                                                                $price = (int) str_replace(',', '', (string) $get('price'));
+
+                                                                if ($salePrice > $price) {
+                                                                    $fail('Giá khuyến mãi không được lớn hơn giá gốc.');
+                                                                }
+                                                            };
+                                                        }),
+
+                                                    Forms\Components\TextInput::make('duration')
+                                                        ->label('Thời lượng khóa học')
+                                                        ->numeric()
+                                                        ->default(0)
+                                                        ->suffix('phút'),
+                                                ])
+                                                ->columns(1),
+
+                                            Forms\Components\Section::make('Hình ảnh')
+                                                ->schema([
+                                                    Forms\Components\FileUpload::make('thumbnail')
+                                                        ->label('Ảnh thumbnail')
+                                                        ->image()
+                                                        ->disk('public')
+                                                        ->directory('courses/thumbnails')
+                                                        ->visibility('public')
+                                                        ->imageEditor()
+                                                        ->imageEditorAspectRatios(['16:9'])
+                                                        ->maxSize(3072),
+                                                ])
+                                                ->collapsible()
+                                                ->collapsed(),
+                                        ])->columnSpan(4),
+
+                                        Forms\Components\Section::make('SEO')
+                                            ->schema([
+                                                Forms\Components\TextInput::make('seo_title')
+                                                    ->label('Tiêu đề SEO')
+                                                    ->maxLength(60),
+
+                                                Forms\Components\Textarea::make('seo_description')
+                                                    ->label('Mô tả SEO')
+                                                    ->maxLength(160)
+                                                    ->rows(3),
+                                            ])
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->columnSpan(8),
+
+                                        Forms\Components\Section::make('Thống kê')
+                                            ->schema([
+                                                Forms\Components\TextInput::make('current_students')
+                                                    ->label('Số học viên hiện tại')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->disabled()
+                                                    ->dehydrated(),
+
+                                                Forms\Components\TextInput::make('views')
+                                                    ->label('Lượt xem')
+                                                    ->numeric()
+                                                    ->default(0),
+                                            ])
+                                            ->columns(2)
+                                            ->collapsible()
+                                            ->collapsed()
                                             ->columnSpanFull(),
                                     ]),
-
-                                Forms\Components\Section::make('Giá bán')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('price')
-                                            ->label('Giá gốc (VNĐ)')
-                                            ->required()
-                                            ->prefix('₫')
-                                            ->default(0)
-                                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
-                                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
-                                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
-                                            ->stripCharacters(',')
-                                            ->helperText('Nhập 0 nếu khóa học miễn phí'),
-
-                                        Forms\Components\TextInput::make('sale_price')
-                                            ->label('Giá khuyến mãi (VNĐ)')
-                                            ->prefix('₫')
-                                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
-                                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
-                                            ->stripCharacters(',')
-                                            ->helperText('Để trống nếu không có giảm giá')
-                                            ->rule(function (Get $get) {
-                                                return function (string $attribute, $value, Closure $fail) use ($get): void {
-                                                    if (! filled($value)) {
-                                                        return;
-                                                    }
-
-                                                    $salePrice = (int) str_replace(',', '', (string) $value);
-                                                    $price = (int) str_replace(',', '', (string) $get('price'));
-
-                                                    if ($salePrice > $price) {
-                                                        $fail('Giá khuyến mãi không được lớn hơn giá gốc.');
-                                                    }
-                                                };
-                                            }),
-
-                                        Forms\Components\TextInput::make('duration')
-                                            ->label('Thời lượng khóa học')
-                                            ->numeric()
-                                            ->default(0)
-                                            ->suffix('phút'),
-                                    ])
-                                    ->columns(3),
-
-                                Forms\Components\Section::make('Mô tả')
-                                    ->schema([
-                                        Forms\Components\RichEditor::make('description')
-                                            ->label('Mô tả chi tiết')
-                                            ->toolbarButtons([
-                                                'bold',
-                                                'italic',
-                                                'underline',
-                                                'bulletList',
-                                                'orderedList',
-                                                'link',
-                                                'h2',
-                                                'h3',
-                                                'blockquote',
-                                            ])
-                                            ->columnSpanFull(),
-                                    ]),
-
-                                Forms\Components\Section::make('Thống kê')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('current_students')
-                                            ->label('Số học viên hiện tại')
-                                            ->numeric()
-                                            ->default(0)
-                                            ->disabled()
-                                            ->dehydrated()
-                                            ->helperText('Tự động cập nhật khi có người mua'),
-
-                                        Forms\Components\TextInput::make('views')
-                                            ->label('Lượt xem')
-                                            ->numeric()
-                                            ->default(0)
-                                            ->helperText('Có thể chỉnh sửa thủ công'),
-                                    ])
-                                    ->columns(2),
-
-                                Forms\Components\Section::make('Cài đặt')
-                                    ->schema([
-                                        Forms\Components\Toggle::make('is_published')
-                                            ->label('Xuất bản')
-                                            ->default(false)
-                                            ->helperText('Hiển thị khóa học trên website'),
-
-                                        Forms\Components\Toggle::make('is_featured')
-                                            ->label('Nổi bật')
-                                            ->default(false)
-                                            ->helperText('Hiển thị ở mục khóa học nổi bật'),
-                                    ])
-                                    ->columns(3),
-
-                                Forms\Components\Section::make('SEO')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('seo_title')
-                                            ->label('Tiêu đề SEO')
-                                            ->maxLength(60),
-
-                                        Forms\Components\Textarea::make('seo_description')
-                                            ->label('Mô tả SEO')
-                                            ->maxLength(160)
-                                            ->rows(3),
-                                    ])
-                                    ->collapsed(),
                             ]),
 
                         Forms\Components\Tabs\Tab::make('Giáo trình')
