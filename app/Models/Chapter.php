@@ -27,6 +27,11 @@ class Chapter extends Model
         return $this->hasMany(Lesson::class)->orderBy('sort_order');
     }
 
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class)->orderBy('sort_order');
+    }
+
     protected static function boot()
     {
         parent::boot();

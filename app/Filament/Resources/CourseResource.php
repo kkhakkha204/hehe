@@ -28,6 +28,29 @@ class CourseResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function applySmartAdd(Forms\Components\Repeater $repeater): Forms\Components\Repeater
+    {
+        return $repeater
+            ->addAction(fn (\Filament\Forms\Components\Actions\Action $action) => $action->hidden(fn ($state) => count($state ?? []) > 0))
+            ->extraItemActions([
+                \Filament\Forms\Components\Actions\Action::make('add_item')
+                    ->icon('heroicon-m-plus')
+                    ->tooltip('Thêm mục mới')
+                    ->action(function ($component, array $arguments) {
+                        $items = $component->getState() ?? [];
+                        $newItems = [];
+                        $newUuid = (string) Str::uuid();
+                        foreach ($items as $uuid => $itemData) {
+                            $newItems[$uuid] = $itemData;
+                            if ($uuid === $arguments['item']) {
+                                $newItems[$newUuid] = [];
+                            }
+                        }
+                        $component->state($newItems);
+                    })
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -218,8 +241,9 @@ class CourseResource extends Resource
                         Forms\Components\Tabs\Tab::make('Giáo trình')
                             ->icon('heroicon-o-book-open')
                             ->schema([
-                                Forms\Components\Repeater::make('chapters')
-                                    ->relationship()
+                                self::applySmartAdd(
+                                    Forms\Components\Repeater::make('chapters')
+                                        ->relationship()
                                     ->schema([
                                         Forms\Components\TextInput::make('title')
                                             ->label('Tên chương')
@@ -231,15 +255,25 @@ class CourseResource extends Resource
                                             ->rows(2)
                                             ->columnSpanFull(),
 
-                                        Forms\Components\Repeater::make('lessons')
-                                            ->relationship()
+                                        Forms\Components\Tabs::make('Nội dung chương')->tabs([
+                                            Forms\Components\Tabs\Tab::make('Bài học')->schema([
+                                                self::applySmartAdd(
+                                                    Forms\Components\Repeater::make('lessons')
+                                                        ->relationship()
                                             ->schema([
-                                                Forms\Components\Grid::make(2)
+                                                Forms\Components\Grid::make(3)
                                                     ->schema([
                                                         Forms\Components\TextInput::make('title')
                                                             ->label('Tên bài học')
                                                             ->required()
                                                             ->columnSpan(2),
+
+                                                        Forms\Components\TextInput::make('duration')
+                                                            ->label('Thời lượng')
+                                                            ->numeric()
+                                                            ->default(0)
+                                                            ->suffix('phút')
+                                                            ->columnSpan(1),
 
                                                         Forms\Components\FileUpload::make('thumbnail')
                                                             ->label('Thumbnail bài học')
@@ -251,37 +285,25 @@ class CourseResource extends Resource
                                                             ->maxSize(2048)
                                                             ->columnSpan(1),
 
-                                                        Forms\Components\TextInput::make('duration')
-                                                            ->label('Thời lượng')
-                                                            ->numeric()
-                                                            ->default(0)
-                                                            ->suffix('phút')
-                                                            ->columnSpan(1),
+                                                        Forms\Components\Toggle::make('is_preview')
+                                                            ->label('Cho phép học thử')
+                                                            ->default(false)
+                                                            ->inline(false)
+                                                            ->columnSpan(2),
 
                                                         Forms\Components\Textarea::make('embed_code')
                                                             ->label('Mã nhúng Bunny.net')
-                                                            ->rows(4)
+                                                            ->rows(2)
                                                             ->placeholder('<iframe src="https://iframe.mediadelivery.net/embed/..." ...></iframe>')
-                                                            ->helperText('Dán mã iframe từ Bunny.net')
-                                                            ->columnSpan(2),
+                                                            ->columnSpan(3),
 
                                                         Forms\Components\RichEditor::make('content')
                                                             ->label('Nội dung bài học')
                                                             ->toolbarButtons([
-                                                                'bold',
-                                                                'italic',
-                                                                'bulletList',
-                                                                'orderedList',
-                                                                'link',
+                                                                'bold', 'italic', 'bulletList', 'orderedList', 'link',
                                                             ])
-                                                            ->extraAttributes(['style' => 'max-height: 300px; overflow-y: auto; resize: vertical;'])
-                                                            ->columnSpan(2),
-
-                                                        Forms\Components\Toggle::make('is_preview')
-                                                            ->label('Cho phép xem thử')
-                                                            ->default(false)
-                                                            ->inline(false)
-                                                            ->columnSpan(2),
+                                                            ->extraAttributes(['style' => 'max-height: 200px; overflow-y: auto; resize: vertical;'])
+                                                            ->columnSpan(3),
                                                     ]),
                                             ])
                                             ->itemLabel(fn (array $state): ?string => $state['title'] ?? 'Bài học mới')
@@ -292,7 +314,243 @@ class CourseResource extends Resource
                                             ->collapsible()
                                             ->defaultItems(0)
                                             ->addActionLabel('Thêm bài học')
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                        ),
+                                            ]),
+
+                                            Forms\Components\Tabs\Tab::make('Bài kiểm tra')->schema([
+                                                self::applySmartAdd(
+                                                    Forms\Components\Repeater::make('quizzes')
+                                                        ->relationship()
+                                            ->schema([
+                                                Forms\Components\Grid::make(4)
+                                                    ->schema([
+                                                        Forms\Components\TextInput::make('title')
+                                                            ->label('Tên bài kiểm tra')
+                                                            ->required()
+                                                            ->columnSpan(2),
+                                                            
+                                                        Forms\Components\TextInput::make('time_limit_minutes')
+                                                            ->label('Thời gian (phút)')
+                                                            ->numeric()
+                                                            ->placeholder('Không giới hạn')
+                                                            ->columnSpan(1),
+                                                            
+                                                        Forms\Components\TextInput::make('pass_score')
+                                                            ->label('Điểm qua bài (%)')
+                                                            ->numeric()
+                                                            ->default(50)
+                                                            ->required()
+                                                            ->columnSpan(1),
+
+                                                        Forms\Components\Textarea::make('description')
+                                                            ->label('Mô tả (tùy chọn)')
+                                                            ->rows(1)
+                                                            ->columnSpan(4),
+                                                    ]),
+                                                    
+                                                Forms\Components\Actions::make([
+                                                    Forms\Components\Actions\Action::make('download_template')
+                                                        ->label('Tải file mẫu Excel')
+                                                        ->icon('heroicon-o-document-arrow-down')
+                                                        ->color('success')
+                                                        ->action(function () {
+                                                            $export = new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+                                                                public function collection()
+                                                                {
+                                                                    return collect([
+                                                                        ['Thủ đô của VN là?', '0', 'Hà Nội', '1', 'HCM', '0', 'Đà Nẵng', '0', 'Huế', '0'],
+                                                                        ['Màu nào là màu cơ bản?', '1', 'Đỏ', '1', 'Trắng', '0', 'Xanh lam', '1', 'Vàng', '1']
+                                                                    ]);
+                                                                }
+                                                                public function headings(): array
+                                                                {
+                                                                    return ['Nội dung câu hỏi', 'Nhiều đáp án (1=Có, 0=Không)', 'Đáp án 1', 'Đúng? (1/0)', 'Đáp án 2', 'Đúng? (1/0)', 'Đáp án 3', 'Đúng? (1/0)', 'Đáp án 4', 'Đúng? (1/0)', '...', '...'];
+                                                                }
+                                                            };
+                                                            return \Maatwebsite\Excel\Facades\Excel::download($export, 'mau_import_cau_hoi.xlsx');
+                                                        }),
+                                                        
+                                                    Forms\Components\Actions\Action::make('import_questions')
+                                                        ->label('Import từ Excel (XLSX)')
+                                                        ->icon('heroicon-o-arrow-up-tray')
+                                                        ->color('primary')
+                                                        ->form([
+                                                            Forms\Components\FileUpload::make('file')
+                                                                ->label('File Excel')
+                                                                ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'])
+                                                                ->disk('local')
+                                                                ->required(),
+                                                        ])
+                                                        ->action(function (array $data, \Filament\Forms\Set $set, \Filament\Forms\Get $get) {
+                                                            $file = storage_path('app/private/' . $data['file']);
+                                                            $collection = \Maatwebsite\Excel\Facades\Excel::toCollection(new \stdClass, $file)->first();
+                                                            
+                                                            $collection->shift(); // Bỏ qua dòng tiêu đề
+                                                            
+                                                            $state = $get('questions') ?? [];
+                                                            
+                                                            foreach ($collection as $row) {
+                                                                if (!isset($row[0]) || empty($row[0])) continue;
+                                                                
+                                                                $question = [
+                                                                    'title' => $row[0],
+                                                                    'type' => (isset($row[1]) && $row[1] == 1) ? 'multiple' : 'single',
+                                                                    'answers' => [],
+                                                                ];
+                                                                
+                                                                for ($i = 2; $i < count($row); $i += 2) {
+                                                                    if (isset($row[$i]) && $row[$i] !== null && $row[$i] !== '') {
+                                                                        $question['answers'][(string) Str::uuid()] = [
+                                                                            'text' => (string)$row[$i],
+                                                                            'is_correct' => (isset($row[$i+1]) && $row[$i+1] == 1) ? true : false,
+                                                                        ];
+                                                                    }
+                                                                }
+                                                                $state[(string) Str::uuid()] = $question;
+                                                            }
+                                                            $set('questions', $state);
+                                                        })
+                                                ]),
+
+                                                self::applySmartAdd(
+                                                    Forms\Components\Repeater::make('questions')
+                                                        ->relationship()
+                                                        ->extraAttributes(['class' => 'question-repeater'])
+                                                    ->schema([
+                                                        Forms\Components\Placeholder::make('css')
+                                                            ->hiddenLabel()
+                                                            ->content(new \Illuminate\Support\HtmlString('
+                                                                <style>
+                                                                    .question-repeater { counter-reset: q_idx; }
+                                                                    .question-repeater li { counter-increment: q_idx; }
+                                                                    .question-repeater .answer-repeater { counter-reset: a_idx; }
+                                                                    .question-repeater .answer-repeater li { counter-increment: a_idx 1 q_idx 0; }
+                                                                    
+                                                                    .question-repeater .fi-rep-item-header-title { font-size: 0 !important; line-height: 0; }
+                                                                    .question-repeater .fi-rep-item-header-title > * { display: none !important; }
+                                                                    .question-repeater .fi-rep-item-header-title::before { content: "Câu " counter(q_idx); font-size: 14px; font-weight: 600; color: inherit; line-height: normal; }
+                                                                    
+                                                                    .answer-repeater .fi-rep-item-header-title { font-size: 0 !important; line-height: 0; }
+                                                                    .answer-repeater .fi-rep-item-header-title > * { display: none !important; }
+                                                                    .answer-repeater .fi-rep-item-header-title::before { content: "Đáp án " counter(a_idx, upper-alpha) !important; font-size: 14px !important; color: #d97706; line-height: normal; }
+                                                                </style>
+                                                            ')),
+                                                        Forms\Components\Grid::make(3)
+                                                            ->schema([
+                                                                Forms\Components\TextInput::make('title')
+                                                                    ->label('Nội dung câu hỏi')
+                                                                    ->required()
+                                                                    ->columnSpan(2),
+                                                                    
+                                                                Forms\Components\Select::make('type')
+                                                                    ->label('Loại câu hỏi')
+                                                                    ->options([
+                                                                        'single' => '1 đáp án đúng',
+                                                                        'multiple' => 'Nhiều đáp án đúng',
+                                                                    ])
+                                                                    ->default('single')
+                                                                    ->selectablePlaceholder(false)
+                                                                    ->required()
+                                                                    ->live()
+                                                                    ->afterStateUpdated(function ($state, $component, $livewire) {
+                                                                        if ($state === 'single') {
+                                                                            $pathParts = explode('.', $component->getStatePath());
+                                                                            array_pop($pathParts); // type
+                                                                            $questionPath = implode('.', $pathParts);
+                                                                            
+                                                                            $answers = data_get($livewire, "{$questionPath}.answers", []);
+                                                                            $foundFirst = false;
+                                                                            foreach ($answers as $key => $answer) {
+                                                                                if (!empty($answer['is_correct'])) {
+                                                                                    if (!$foundFirst) {
+                                                                                        $foundFirst = true;
+                                                                                    } else {
+                                                                                        data_set($livewire, "{$questionPath}.answers.{$key}.is_correct", false);
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                    ->columnSpan(1),
+                                                            ]),
+                                                            
+                                                        self::applySmartAdd(
+                                                            Forms\Components\Repeater::make('answers')
+                                                                ->label('Các tùy chọn đáp án')
+                                                            ->extraAttributes(['class' => 'answer-repeater'])
+                                                            ->schema([
+                                                                Forms\Components\TextInput::make('text')
+                                                                    ->hiddenLabel()
+                                                                    ->placeholder('Nhập nội dung...')
+                                                                    ->required()
+                                                                    ->columnSpan(3),
+                                                                Forms\Components\Toggle::make('is_correct')
+                                                                    ->hiddenLabel()
+                                                                    ->live()
+                                                                    ->afterStateUpdated(function ($state, $component, $livewire) {
+                                                                        if ($state) {
+                                                                            $pathParts = explode('.', $component->getStatePath());
+                                                                            array_pop($pathParts); // is_correct
+                                                                            $currentUuid = array_pop($pathParts); // item uuid
+                                                                            array_pop($pathParts); // answers
+                                                                            
+                                                                            $questionPath = implode('.', $pathParts); // data...questions.uid
+                                                                            $type = data_get($livewire, "{$questionPath}.type", 'single');
+                                                                            
+                                                                            if ($type === 'single') {
+                                                                                $answers = data_get($livewire, "{$questionPath}.answers", []);
+                                                                                foreach ($answers as $key => $answer) {
+                                                                                    if ($key !== $currentUuid && !empty($answer['is_correct'])) {
+                                                                                        data_set($livewire, "{$questionPath}.answers.{$key}.is_correct", false);
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                    ->columnSpan(1),
+                                                            ])
+                                                            ->itemLabel('Đáp án')
+                                                            ->columns(4)
+                                                            ->grid(2)
+                                                            ->defaultItems(2)
+                                                            ->addActionLabel('Thêm đáp án')
+                                                            ->rule(function (\Filament\Forms\Get $get) {
+                                                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                                    $correctCount = collect($value)->where('is_correct', true)->count();
+                                                                    if ($get('type') === 'single' && $correctCount !== 1) {
+                                                                        $fail('Cần có một và CHỈ MỘT đáp án được bật xanh cho loại câu hỏi này.');
+                                                                    } elseif ($get('type') === 'multiple' && $correctCount < 1) {
+                                                                        $fail('Cần có ÍT NHẤT một đáp án được bật xanh cho loại câu hỏi này.');
+                                                                    }
+                                                                };
+                                                            })
+                                                            ->columnSpanFull()
+                                                        ),
+                                                    ])
+                                                    ->itemLabel('Câu hỏi')
+                                                    ->collapsed()
+                                                    ->cloneable()
+                                                    ->orderColumn('sort_order')
+                                                    ->reorderableWithButtons()
+                                                    ->collapsible()
+                                                    ->defaultItems(0)
+                                                    ->addActionLabel('Thêm câu hỏi')
+                                                    ->columnSpanFull()
+                                                ),
+                                            ])
+                                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? 'Bài kiểm tra mới')
+                                            ->collapsed()
+                                            ->cloneable()
+                                            ->orderColumn('sort_order')
+                                            ->reorderableWithButtons()
+                                            ->collapsible()
+                                            ->defaultItems(0)
+                                            ->addActionLabel('Thêm bài kiểm tra')
+                                            ->columnSpanFull()
+                                        ),
+                                            ]),
+                                        ])->columnSpanFull(),
                                     ])
                                     ->itemLabel(fn (array $state): ?string => $state['title'] ?? 'Chương mới')
                                     ->collapsed()
@@ -303,7 +561,17 @@ class CourseResource extends Resource
                                     ->defaultItems(0)
                                     ->addActionLabel('Thêm chương')
                                     ->columnSpanFull()
-                                    ->grid(1),
+                                    ->grid(1)
+                                ),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('Kết quả kiểm tra')
+                            ->icon('heroicon-o-chart-bar')
+                            ->schema([
+                                Forms\Components\ViewField::make('quiz_results_tab')
+                                    ->label('')
+                                    ->view('admin.courses.quiz-results')
+                                    ->columnSpanFull(),
                             ]),
                     ])
                     ->columnSpanFull(),
@@ -394,8 +662,7 @@ class CourseResource extends Resource
                     ->label('Nổi bật'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->modalWidth('7xl'),
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

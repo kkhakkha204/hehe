@@ -16,7 +16,6 @@ class ListCourses extends SinglePageListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->modalWidth('7xl')
                 ->label('Tạo khóa học mới'),
         ];
     }
