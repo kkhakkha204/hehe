@@ -250,14 +250,6 @@
                             @method('PUT')
 
                             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                                <div class="md:col-span-2">
-                                    <label for="current_password" class="mb-2 block text-[14px] font-semibold text-[#111]">Mật khẩu hiện tại</label>
-                                    <input id="current_password" name="current_password" type="password" class="h-12 w-full max-w-[520px] border border-[#d7dee8] bg-white px-4 text-[14px] text-[#111] outline-none focus:border-black">
-                                    @if($errors->updatePassword->has('current_password'))
-                                        <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('current_password') }}</p>
-                                    @endif
-                                </div>
-
                                 <div>
                                     <label for="password" class="mb-2 block text-[14px] font-semibold text-[#111]">Mật khẩu mới</label>
                                     <input id="password" name="password" type="password" class="h-12 w-full border border-[#d7dee8] bg-white px-4 text-[14px] text-[#111] outline-none focus:border-black">

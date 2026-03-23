@@ -65,6 +65,7 @@ class OrderResource extends Resource
                         Forms\Components\Select::make('user_id')
                             ->label('Khách hàng')
                             ->relationship('user', 'name')
+                            ->preload()
                             ->searchable()
                             ->disabled()
                             ->dehydrated(false),
@@ -72,6 +73,7 @@ class OrderResource extends Resource
                         Forms\Components\Select::make('course_id')
                             ->label('Khóa học')
                             ->relationship('course', 'title')
+                            ->preload()
                             ->searchable()
                             ->disabled()
                             ->dehydrated(false),
@@ -83,26 +85,27 @@ class OrderResource extends Resource
                             ->label('Giá gốc')
                             ->disabled()
                             ->dehydrated(false)
-                            ->suffix('₫')
-                            ->numeric(),
+                            ->formatStateUsing(fn ($state) => filled($state) ? number_format((int) $state, 0, '.', ',') : '0')
+                            ->suffix('₫'),
 
                         Forms\Components\TextInput::make('discount_amount')
                             ->label('Số tiền giảm')
                             ->disabled()
                             ->dehydrated(false)
-                            ->suffix('₫')
-                            ->numeric(),
+                            ->formatStateUsing(fn ($state) => filled($state) ? number_format((int) $state, 0, '.', ',') : '0')
+                            ->suffix('₫'),
 
                         Forms\Components\TextInput::make('final_amount')
                             ->label('Số tiền cuối')
                             ->disabled()
                             ->dehydrated(false)
-                            ->suffix('₫')
-                            ->numeric(),
+                            ->formatStateUsing(fn ($state) => filled($state) ? number_format((int) $state, 0, '.', ',') : '0')
+                            ->suffix('₫'),
 
                         Forms\Components\Select::make('coupon_id')
                             ->label('Mã giảm giá đã dùng')
                             ->relationship('coupon', 'code')
+                            ->preload()
                             ->disabled()
                             ->dehydrated(false),
 

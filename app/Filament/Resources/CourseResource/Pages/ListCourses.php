@@ -10,6 +10,8 @@ class ListCourses extends SinglePageListRecords
 {
     protected static string $resource = CourseResource::class;
 
+    protected ?string $maxContentWidth = 'full';
+
     protected function getHeaderActions(): array
     {
         return [

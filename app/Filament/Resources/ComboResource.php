@@ -7,7 +7,6 @@ use App\Models\Combo;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
@@ -72,13 +71,21 @@ class ComboResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('price')
                             ->label('Giá gốc (VNĐ)')
-                            ->numeric()
+                            ->live(onBlur: true)
                             ->default(0)
+                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
+                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : '0'))
+                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
+                            ->stripCharacters(',')
                             ->required(),
 
                         Forms\Components\TextInput::make('sale_price')
                             ->label('Giá khuyến mãi (VNĐ)')
-                            ->numeric()
+                            ->live(onBlur: true)
+                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
+                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('sale_price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : null))
+                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
+                            ->stripCharacters(',')
                             ->lte('price'),
 
                         Forms\Components\TextInput::make('sort_order')
@@ -98,6 +105,7 @@ class ComboResource extends Resource
                             ->label('Chọn khóa học')
                             ->relationship('courses', 'title')
                             ->multiple()
+                            ->preload()
                             ->searchable()
                             ->helperText('Chọn các khóa học sẽ hiển thị trong combo')
                             ->columnSpanFull(),

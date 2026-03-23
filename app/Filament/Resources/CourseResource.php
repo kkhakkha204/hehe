@@ -67,6 +67,7 @@ class CourseResource extends Resource
                                         Forms\Components\Select::make('category_id')
                                             ->label('Danh mục')
                                             ->relationship('category', 'name')
+                                            ->preload()
                                             ->searchable()
                                             ->required()
                                             ->createOptionForm([
@@ -76,6 +77,7 @@ class CourseResource extends Resource
                                         Forms\Components\Select::make('author_id')
                                             ->label('Giảng viên')
                                             ->relationship('author', 'name')
+                                            ->preload()
                                             ->searchable()
                                             ->required()
                                             ->createOptionForm([
@@ -104,15 +106,23 @@ class CourseResource extends Resource
                                         Forms\Components\TextInput::make('price')
                                             ->label('Giá gốc (VNĐ)')
                                             ->required()
-                                            ->numeric()
+                                            ->live(onBlur: true)
                                             ->prefix('₫')
                                             ->default(0)
+                                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
+                                            ->afterStateUpdated(fn (Set $set, $state) => $set('price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : '0'))
+                                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
+                                            ->stripCharacters(',')
                                             ->helperText('Nhập 0 nếu khóa học miễn phí'),
 
                                         Forms\Components\TextInput::make('sale_price')
                                             ->label('Giá khuyến mãi (VNĐ)')
-                                            ->numeric()
+                                            ->live(onBlur: true)
                                             ->prefix('₫')
+                                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
+                                            ->afterStateUpdated(fn (Set $set, $state) => $set('sale_price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : null))
+                                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
+                                            ->stripCharacters(',')
                                             ->helperText('Để trống nếu không có giảm giá')
                                             ->lte('price'),
 
