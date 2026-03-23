@@ -3,60 +3,122 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PhoneOtp;
 use App\Models\User;
+use App\Support\VietnamPhone;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class NewPasswordController extends Controller
 {
-    /**
-     * Display the password reset view.
-     */
     public function create(Request $request): View
     {
-        return view('auth.reset-password', ['request' => $request]);
+        return view('auth.forgot-password');
     }
 
-    /**
-     * Handle an incoming new password request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'token' => ['required'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        $data = $request->validate([
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! VietnamPhone::isValid((string) $value)) {
+                        $fail('Số điện thoại phải là số di động Việt Nam hợp lệ.');
+                    }
+                },
+            ],
+            'otp' => ['required', 'digits:6'],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->mixedCase()],
+        ], [
+            'phone.required' => 'Số điện thoại là bắt buộc.',
+            'otp.required' => 'Vui lòng nhập OTP.',
+            'otp.digits' => 'OTP phải gồm đúng 6 số.',
+            'password.required' => 'Mật khẩu mới là bắt buộc.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
         ]);
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will parse the error and return the response.
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user) use ($request) {
-                $user->forceFill([
-                    'password' => Hash::make($request->password),
-                    'remember_token' => Str::random(60),
-                ])->save();
+        $phone = VietnamPhone::normalize($data['phone']);
+        $ip = (string) $request->ip();
+        $verifyKey = 'reset-otp-verify:'.$ip;
 
-                event(new PasswordReset($user));
-            }
-        );
+        if (RateLimiter::tooManyAttempts($verifyKey, 10)) {
+            return back()
+                ->withInput(['phone' => $phone])
+                ->withErrors([
+                    'otp' => 'Bạn đã thử xác thực quá nhiều lần từ IP này. Vui lòng thử lại sau 15 phút.',
+                ]);
+        }
 
-        // If the password was successfully reset, we will redirect the user back to
-        // the application's home authenticated view. If there is an error we can
-        // redirect them back to where they came from with their error message.
-        return $status == Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        $otpRecord = PhoneOtp::query()
+            ->where('phone', $phone)
+            ->where('purpose', 'password_reset')
+            ->first();
+
+        if (! $otpRecord || $otpRecord->consumed_at || ! $otpRecord->expires_at || $otpRecord->expires_at->isPast()) {
+            RateLimiter::hit($verifyKey, 900);
+
+            return back()
+                ->withInput(['phone' => $phone])
+                ->withErrors([
+                    'otp' => 'OTP không hợp lệ hoặc đã hết hạn. Vui lòng gửi lại mã mới.',
+                ]);
+        }
+
+        if ($otpRecord->attempts_count >= $otpRecord->max_attempts) {
+            RateLimiter::hit($verifyKey, 900);
+
+            return back()
+                ->withInput(['phone' => $phone])
+                ->withErrors([
+                    'otp' => 'Bạn đã nhập sai OTP quá 5 lần. Vui lòng gửi lại mã mới.',
+                ]);
+        }
+
+        if ($otpRecord->otp !== $data['otp']) {
+            $otpRecord->increment('attempts_count');
+            RateLimiter::hit($verifyKey, 900);
+
+            return back()
+                ->withInput(['phone' => $phone])
+                ->withErrors([
+                    'otp' => 'OTP không chính xác.',
+                ]);
+        }
+
+        $user = User::query()->where('phone', $phone)->first();
+
+        if (! $user) {
+            return back()
+                ->withInput(['phone' => $phone])
+                ->withErrors([
+                    'phone' => 'Tài khoản không tồn tại.',
+                ]);
+        }
+
+        RateLimiter::clear($verifyKey);
+
+        $user->forceFill([
+            'password' => Hash::make($data['password']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        $otpRecord->forceFill([
+            'user_id' => $user->id,
+            'verified_at' => now(),
+            'consumed_at' => now(),
+        ])->save();
+
+        event(new PasswordReset($user));
+
+        return redirect()->route('login', ['mode' => 'password'])
+            ->with('status', 'Mật khẩu đã được đặt lại thành công. Hãy đăng nhập lại.');
     }
 }

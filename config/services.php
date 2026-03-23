@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'otp' => [
+        'webhook_url' => env('OTP_WEBHOOK_URL'),
+    ],
+
 ];

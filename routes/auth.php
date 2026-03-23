@@ -15,10 +15,19 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
+    Route::post('register/send-otp', [RegisteredUserController::class, 'sendOtp'])
+        ->name('register.send-otp');
+
     Route::post('register', [RegisteredUserController::class, 'store']);
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
+
+    Route::post('login/send-otp', [AuthenticatedSessionController::class, 'sendOtp'])
+        ->name('login.send-otp');
+
+    Route::post('login/otp', [AuthenticatedSessionController::class, 'otpLogin'])
+        ->name('login.otp');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
@@ -28,11 +37,11 @@ Route::middleware('guest')->group(function () {
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
         ->name('password.email');
 
+    Route::post('forgot-password/reset', [NewPasswordController::class, 'store'])
+        ->name('password.store');
+
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
-
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->name('password.store');
 });
 
 Route::middleware('auth')->group(function () {

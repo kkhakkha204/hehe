@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\VietnamPhone;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,15 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login' => ['required', 'string'],
+            'phone' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! VietnamPhone::isValid((string) $value)) {
+                        $fail('Số điện thoại phải là số di động Việt Nam hợp lệ.');
+                    }
+                },
+            ],
             'password' => ['required', 'string'],
         ];
     }
@@ -28,17 +37,16 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Xác định xem login là email hay username
-        $fieldType = filter_var($this->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $phone = VietnamPhone::normalize((string) $this->input('phone'));
 
         if (! Auth::attempt([
-            $fieldType => $this->input('login'),
-            'password' => $this->input('password')
+            'phone' => $phone,
+            'password' => $this->input('password'),
         ], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login' => __('Thông tin đăng nhập không chính xác.'),
+                'phone' => 'Thông tin đăng nhập không chính xác.',
             ]);
         }
 
@@ -56,7 +64,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'login' => trans('auth.throttle', [
+            'phone' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -65,6 +73,6 @@ class LoginRequest extends FormRequest
 
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->input('login')).'|'.$this->ip());
+        return Str::transliterate(Str::lower(VietnamPhone::normalize((string) $this->input('phone'))).'|'.$this->ip());
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
+use App\Models\PhoneOtp;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -219,6 +220,27 @@ class UserResource extends Resource
                         ->modalWidth('5xl'),
                     Tables\Actions\EditAction::make()
                         ->modalWidth('5xl'),
+
+                    Tables\Actions\Action::make('reset_otp_block')
+                        ->label('Reset chặn OTP')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('info')
+                        ->visible(fn ($record) => filled($record->phone))
+                        ->requiresConfirmation()
+                        ->modalHeading('Reset chặn OTP')
+                        ->modalDescription('Thao tác này sẽ reset giới hạn gửi và xác thực OTP của người dùng này.')
+                        ->action(function ($record): void {
+                            PhoneOtp::query()
+                                ->where('phone', $record->phone)
+                                ->update([
+                                    'sent_count' => 0,
+                                    'attempts_count' => 0,
+                                    'last_sent_at' => null,
+                                    'verified_at' => null,
+                                    'consumed_at' => null,
+                                ]);
+                        })
+                        ->successNotificationTitle('Đã reset chặn OTP'),
 
                     Tables\Actions\Action::make('view_enrollments')
                         ->label('Xem khóa học')
