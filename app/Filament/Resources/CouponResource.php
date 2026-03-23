@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CouponResource\Pages;
 use App\Models\Coupon;
+use Closure;
 use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -70,12 +72,27 @@ class CouponResource extends Resource
                         Forms\Components\TextInput::make('value')
                             ->label('Giá trị giảm')
                             ->required()
-                            ->live(onBlur: true)
                             ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('value', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : null))
+                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
                             ->stripCharacters(',')
-                            ->minValue(0)
+                            ->rule(function (Get $get) {
+                                return function (string $attribute, $value, Closure $fail) use ($get): void {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    $amount = (int) str_replace(',', '', (string) $value);
+
+                                    if ($amount < 0) {
+                                        $fail('Giá trị giảm phải lớn hơn hoặc bằng 0.');
+                                    }
+
+                                    if ($get('type') === 'percentage' && $amount > 100) {
+                                        $fail('Giá trị giảm theo phần trăm không được lớn hơn 100.');
+                                    }
+                                };
+                            })
                             ->suffix(fn ($get) => $get('type') === 'percentage' ? '%' : 'VNĐ')
                             ->helperText(fn ($get) => $get('type') === 'percentage'
                                 ? 'Nhập số từ 0-100, ví dụ 20 nghĩa là giảm 20%'
@@ -83,24 +100,46 @@ class CouponResource extends Resource
 
                         Forms\Components\TextInput::make('max_discount')
                             ->label('Giảm tối đa')
-                            ->live(onBlur: true)
                             ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('max_discount', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : null))
+                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
                             ->stripCharacters(',')
-                            ->minValue(0)
+                            ->rule(function () {
+                                return function (string $attribute, $value, Closure $fail): void {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    $amount = (int) str_replace(',', '', (string) $value);
+
+                                    if ($amount < 0) {
+                                        $fail('Giảm tối đa phải lớn hơn hoặc bằng 0.');
+                                    }
+                                };
+                            })
                             ->suffix('VNĐ')
                             ->helperText('Chỉ áp dụng với mã giảm theo phần trăm')
                             ->visible(fn ($get) => $get('type') === 'percentage'),
 
                         Forms\Components\TextInput::make('min_order')
                             ->label('Đơn tối thiểu')
-                            ->live(onBlur: true)
                             ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('min_order', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : '0'))
+                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
                             ->stripCharacters(',')
-                            ->minValue(0)
+                            ->rule(function () {
+                                return function (string $attribute, $value, Closure $fail): void {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    $amount = (int) str_replace(',', '', (string) $value);
+
+                                    if ($amount < 0) {
+                                        $fail('Đơn tối thiểu phải lớn hơn hoặc bằng 0.');
+                                    }
+                                };
+                            })
                             ->default(0)
                             ->suffix('VNĐ')
                             ->helperText('Giá trị đơn hàng tối thiểu để áp dụng mã'),

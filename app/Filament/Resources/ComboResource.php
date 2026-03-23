@@ -4,8 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ComboResource\Pages;
 use App\Models\Combo;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -71,22 +73,33 @@ class ComboResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('price')
                             ->label('Giá gốc (VNĐ)')
-                            ->live(onBlur: true)
                             ->default(0)
                             ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : '0'))
+                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
                             ->stripCharacters(',')
                             ->required(),
 
                         Forms\Components\TextInput::make('sale_price')
                             ->label('Giá khuyến mãi (VNĐ)')
-                            ->live(onBlur: true)
                             ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('sale_price', filled($state) ? number_format((int) str_replace(',', '', (string) $state), 0, '.', ',') : null))
+                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
                             ->stripCharacters(',')
-                            ->lte('price'),
+                            ->rule(function (Get $get) {
+                                return function (string $attribute, $value, Closure $fail) use ($get): void {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    $salePrice = (int) str_replace(',', '', (string) $value);
+                                    $price = (int) str_replace(',', '', (string) $get('price'));
+
+                                    if ($salePrice > $price) {
+                                        $fail('Giá khuyến mãi không được lớn hơn giá gốc.');
+                                    }
+                                };
+                            }),
 
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Thứ tự')
