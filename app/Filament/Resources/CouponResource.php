@@ -33,167 +33,175 @@ class CouponResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Thông tin cơ bản')
+                Forms\Components\Grid::make(12)
                     ->schema([
-                        Forms\Components\TextInput::make('code')
-                            ->label('Mã giảm giá')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(50)
-                            ->placeholder('SUMMER2026')
-                            ->helperText('Mã giảm giá sẽ tự động viết hoa')
-                            ->dehydrateStateUsing(fn ($state) => strtoupper($state))
-                            ->formatStateUsing(fn ($state) => strtoupper($state)),
+                        Forms\Components\Group::make([
+                            Forms\Components\Section::make('Thiết lập giảm giá')
+                                ->schema([
+                                    Forms\Components\Select::make('type')
+                                        ->label('Loại giảm giá')
+                                        ->options([
+                                            'percentage' => 'Phần trăm (%)',
+                                            'fixed' => 'Số tiền cố định (VNĐ)',
+                                        ])
+                                        ->required()
+                                        ->reactive()
+                                        ->default('percentage'),
 
-                        Forms\Components\Textarea::make('description')
-                            ->label('Mô tả')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->placeholder('Giảm giá mùa hè 2026'),
+                                    Forms\Components\TextInput::make('value')
+                                        ->label('Giá trị giảm')
+                                        ->required()
+                                        ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
+                                        ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
+                                        ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
+                                        ->stripCharacters(',')
+                                        ->rule(function (Get $get) {
+                                            return function (string $attribute, $value, Closure $fail) use ($get): void {
+                                                if (! filled($value)) {
+                                                    return;
+                                                }
 
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Kích hoạt')
-                            ->default(true)
-                            ->helperText('Bật hoặc tắt mã giảm giá'),
-                    ])->columns(1),
+                                                $amount = (int) str_replace(',', '', (string) $value);
 
-                Forms\Components\Section::make('Thiết lập giảm giá')
-                    ->schema([
-                        Forms\Components\Select::make('type')
-                            ->label('Loại giảm giá')
-                            ->options([
-                                'percentage' => 'Phần trăm (%)',
-                                'fixed' => 'Số tiền cố định (VNĐ)',
-                            ])
-                            ->required()
-                            ->reactive()
-                            ->default('percentage'),
+                                                if ($amount < 0) {
+                                                    $fail('Giá trị giảm phải lớn hơn hoặc bằng 0.');
+                                                }
 
-                        Forms\Components\TextInput::make('value')
-                            ->label('Giá trị giảm')
-                            ->required()
-                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
-                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
-                            ->stripCharacters(',')
-                            ->rule(function (Get $get) {
-                                return function (string $attribute, $value, Closure $fail) use ($get): void {
-                                    if (! filled($value)) {
-                                        return;
-                                    }
+                                                if ($get('type') === 'percentage' && $amount > 100) {
+                                                    $fail('Giá trị giảm theo phần trăm không được lớn hơn 100.');
+                                                }
+                                            };
+                                        })
+                                        ->suffix(fn ($get) => $get('type') === 'percentage' ? '%' : 'VNĐ')
+                                        ->helperText(fn ($get) => $get('type') === 'percentage'
+                                            ? 'Nhập số từ 0-100, ví dụ 20 nghĩa là giảm 20%'
+                                            : 'Nhập số tiền giảm, ví dụ 100000 nghĩa là giảm 100.000đ'),
 
-                                    $amount = (int) str_replace(',', '', (string) $value);
+                                    Forms\Components\TextInput::make('max_discount')
+                                        ->label('Giảm tối đa')
+                                        ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
+                                        ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
+                                        ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
+                                        ->stripCharacters(',')
+                                        ->rule(function () {
+                                            return function (string $attribute, $value, Closure $fail): void {
+                                                if (! filled($value)) {
+                                                    return;
+                                                }
 
-                                    if ($amount < 0) {
-                                        $fail('Giá trị giảm phải lớn hơn hoặc bằng 0.');
-                                    }
+                                                $amount = (int) str_replace(',', '', (string) $value);
 
-                                    if ($get('type') === 'percentage' && $amount > 100) {
-                                        $fail('Giá trị giảm theo phần trăm không được lớn hơn 100.');
-                                    }
-                                };
-                            })
-                            ->suffix(fn ($get) => $get('type') === 'percentage' ? '%' : 'VNĐ')
-                            ->helperText(fn ($get) => $get('type') === 'percentage'
-                                ? 'Nhập số từ 0-100, ví dụ 20 nghĩa là giảm 20%'
-                                : 'Nhập số tiền giảm, ví dụ 100000 nghĩa là giảm 100.000đ'),
+                                                if ($amount < 0) {
+                                                    $fail('Giảm tối đa phải lớn hơn hoặc bằng 0.');
+                                                }
+                                            };
+                                        })
+                                        ->suffix('VNĐ')
+                                        ->helperText('Chỉ áp dụng với mã giảm theo phần trăm')
+                                        ->visible(fn ($get) => $get('type') === 'percentage'),
 
-                        Forms\Components\TextInput::make('max_discount')
-                            ->label('Giảm tối đa')
-                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : null))
-                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
-                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : null)
-                            ->stripCharacters(',')
-                            ->rule(function () {
-                                return function (string $attribute, $value, Closure $fail): void {
-                                    if (! filled($value)) {
-                                        return;
-                                    }
+                                    Forms\Components\TextInput::make('min_order')
+                                        ->label('Đơn tối thiểu')
+                                        ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
+                                        ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
+                                        ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
+                                        ->stripCharacters(',')
+                                        ->rule(function () {
+                                            return function (string $attribute, $value, Closure $fail): void {
+                                                if (! filled($value)) {
+                                                    return;
+                                                }
 
-                                    $amount = (int) str_replace(',', '', (string) $value);
+                                                $amount = (int) str_replace(',', '', (string) $value);
 
-                                    if ($amount < 0) {
-                                        $fail('Giảm tối đa phải lớn hơn hoặc bằng 0.');
-                                    }
-                                };
-                            })
-                            ->suffix('VNĐ')
-                            ->helperText('Chỉ áp dụng với mã giảm theo phần trăm')
-                            ->visible(fn ($get) => $get('type') === 'percentage'),
+                                                if ($amount < 0) {
+                                                    $fail('Đơn tối thiểu phải lớn hơn hoặc bằng 0.');
+                                                }
+                                            };
+                                        })
+                                        ->default(0)
+                                        ->suffix('VNĐ')
+                                        ->helperText('Giá trị đơn hàng tối thiểu để áp dụng mã'),
+                                ])->columns(2),
 
-                        Forms\Components\TextInput::make('min_order')
-                            ->label('Đơn tối thiểu')
-                            ->afterStateHydrated(fn (Forms\Components\TextInput $component, $state) => $component->state(filled($state) ? number_format((int) $state, 0, '.', ',') : '0'))
-                            ->extraInputAttributes(['x-on:input' => 'const digits = $el.value.replace(/\D/g, ""); $el.value = digits ? Number(digits).toLocaleString("en-US") : "";'])
-                            ->dehydrateStateUsing(fn ($state) => filled($state) ? (int) str_replace(',', '', (string) $state) : 0)
-                            ->stripCharacters(',')
-                            ->rule(function () {
-                                return function (string $attribute, $value, Closure $fail): void {
-                                    if (! filled($value)) {
-                                        return;
-                                    }
+                            Forms\Components\Section::make('Phạm vi và giới hạn')
+                                ->schema([
+                                    Forms\Components\Select::make('scope')
+                                        ->label('Áp dụng cho')
+                                        ->options([
+                                            'all' => 'Tất cả khóa học',
+                                            'specific' => 'Khóa học cụ thể',
+                                        ])
+                                        ->required()
+                                        ->reactive()
+                                        ->default('all'),
 
-                                    $amount = (int) str_replace(',', '', (string) $value);
+                                    Forms\Components\Select::make('courses')
+                                        ->label('Chọn khóa học')
+                                        ->multiple()
+                                        ->relationship('courses', 'title')
+                                        ->preload()
+                                        ->searchable()
+                                        ->visible(fn ($get) => $get('scope') === 'specific')
+                                        ->helperText('Chọn các khóa học được áp dụng mã giảm giá'),
 
-                                    if ($amount < 0) {
-                                        $fail('Đơn tối thiểu phải lớn hơn hoặc bằng 0.');
-                                    }
-                                };
-                            })
-                            ->default(0)
-                            ->suffix('VNĐ')
-                            ->helperText('Giá trị đơn hàng tối thiểu để áp dụng mã'),
-                    ])->columns(2),
+                                    Forms\Components\TextInput::make('usage_limit')
+                                        ->label('Giới hạn tổng lượt dùng')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->placeholder('Không giới hạn')
+                                        ->helperText('Để trống nếu không giới hạn tổng số lượt dùng'),
 
-                Forms\Components\Section::make('Phạm vi và giới hạn')
-                    ->schema([
-                        Forms\Components\Select::make('scope')
-                            ->label('Áp dụng cho')
-                            ->options([
-                                'all' => 'Tất cả khóa học',
-                                'specific' => 'Khóa học cụ thể',
-                            ])
-                            ->required()
-                            ->reactive()
-                            ->default('all'),
+                                    Forms\Components\TextInput::make('per_user_limit')
+                                        ->label('Giới hạn mỗi học viên')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->default(1)
+                                        ->required()
+                                        ->helperText('Mỗi học viên được dùng tối đa bao nhiêu lần'),
+                                ])->columns(2),
+                        ])->columnSpan(8),
 
-                        Forms\Components\Select::make('courses')
-                            ->label('Chọn khóa học')
-                            ->multiple()
-                            ->relationship('courses', 'title')
-                            ->preload()
-                            ->searchable()
-                            ->visible(fn ($get) => $get('scope') === 'specific')
-                            ->helperText('Chọn các khóa học được áp dụng mã giảm giá'),
+                        Forms\Components\Group::make([
+                            Forms\Components\Section::make('Thông tin cơ bản')
+                                ->schema([
+                                    Forms\Components\TextInput::make('code')
+                                        ->label('Mã giảm giá')
+                                        ->required()
+                                        ->unique(ignoreRecord: true)
+                                        ->maxLength(50)
+                                        ->placeholder('SUMMER2026')
+                                        ->helperText('Mã giảm giá sẽ tự động viết hoa')
+                                        ->dehydrateStateUsing(fn ($state) => strtoupper($state))
+                                        ->formatStateUsing(fn ($state) => strtoupper($state)),
 
-                        Forms\Components\TextInput::make('usage_limit')
-                            ->label('Giới hạn tổng lượt dùng')
-                            ->numeric()
-                            ->minValue(1)
-                            ->placeholder('Không giới hạn')
-                            ->helperText('Để trống nếu không giới hạn tổng số lượt dùng'),
+                                    Forms\Components\Textarea::make('description')
+                                        ->label('Mô tả')
+                                        ->rows(3)
+                                        ->maxLength(500)
+                                        ->placeholder('Giảm giá mùa hè 2026')
+                                        ->columnSpanFull(),
 
-                        Forms\Components\TextInput::make('per_user_limit')
-                            ->label('Giới hạn mỗi học viên')
-                            ->numeric()
-                            ->minValue(1)
-                            ->default(1)
-                            ->required()
-                            ->helperText('Mỗi học viên được dùng tối đa bao nhiêu lần'),
-                    ])->columns(2),
+                                    Forms\Components\Toggle::make('is_active')
+                                        ->label('Kích hoạt')
+                                        ->default(true)
+                                        ->helperText('Bật hoặc tắt mã giảm giá'),
+                                ]),
 
-                Forms\Components\Section::make('Thời gian hiệu lực')
-                    ->schema([
-                        Forms\Components\DateTimePicker::make('starts_at')
-                            ->label('Ngày bắt đầu')
-                            ->nullable()
-                            ->helperText('Để trống nếu muốn có hiệu lực ngay'),
+                            Forms\Components\Section::make('Thời gian hiệu lực')
+                                ->schema([
+                                    Forms\Components\DateTimePicker::make('starts_at')
+                                        ->label('Ngày bắt đầu')
+                                        ->nullable()
+                                        ->helperText('Để trống nếu muốn có hiệu lực ngay'),
 
-                        Forms\Components\DateTimePicker::make('expires_at')
-                            ->label('Ngày hết hạn')
-                            ->nullable()
-                            ->helperText('Để trống nếu không giới hạn thời gian'),
-                    ])->columns(2),
+                                    Forms\Components\DateTimePicker::make('expires_at')
+                                        ->label('Ngày hết hạn')
+                                        ->nullable()
+                                        ->helperText('Để trống nếu không giới hạn thời gian'),
+                                ]),
+                        ])->columnSpan(4),
+                    ]),
             ]);
     }
 

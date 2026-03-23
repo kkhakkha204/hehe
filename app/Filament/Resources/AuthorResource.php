@@ -28,82 +28,85 @@ class AuthorResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Thông tin cơ bản')
-                    ->description('Thông tin cơ bản của giảng viên')
+                Forms\Components\Grid::make(12)
                     ->schema([
-                        Forms\Components\FileUpload::make('avatar')
-                            ->label('Ảnh đại diện')
-                            ->image()
-                            ->disk('public')
-                            ->directory('authors/avatars')
-                            ->visibility('public')
-                            ->imageEditor()
-                            ->imageEditorAspectRatios([
-                                '1:1',
-                            ])
-                            ->maxSize(2048) // 2MB
-                            ->helperText('Kích thước khuyến nghị: 400x400px. Tối đa 2MB.')
-                            ->columnSpanFull(),
+                        Forms\Components\Group::make([
+                            Forms\Components\Section::make('Thông tin cơ bản')
+                                ->schema([
+                                    Forms\Components\TextInput::make('name')
+                                        ->label('Tên giảng viên')
+                                        ->required()
+                                        ->maxLength(255)
+                                        ->placeholder('VD: Nguyễn Văn A'),
 
-                        Forms\Components\TextInput::make('name')
-                            ->label('Tên giảng viên')
-                            ->required()
-                            ->maxLength(255)
-                            ->placeholder('VD: Nguyễn Văn A'),
+                                    Forms\Components\TextInput::make('email')
+                                        ->label('Email')
+                                        ->email()
+                                        ->maxLength(255)
+                                        ->placeholder('example@domain.com'),
+                                ])->columns(2),
 
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email')
-                            ->email()
-                            ->maxLength(255)
-                            ->placeholder('example@domain.com'),
+                            Forms\Components\Section::make('Giới thiệu')
+                                ->schema([
+                                    Forms\Components\Textarea::make('bio')
+                                        ->label('Tiểu sử')
+                                        ->rows(4)
+                                        ->maxLength(1000)
+                                        ->placeholder('Giới thiệu ngắn về giảng viên, kinh nghiệm, chuyên môn...')
+                                        ->columnSpanFull(),
+                                ]),
 
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Kích hoạt')
-                            ->default(true)
-                            ->helperText('Hiển thị giảng viên trên website'),
+                            Forms\Components\Section::make('Liên kết mạng xã hội')
+                                ->schema([
+                                    Forms\Components\TextInput::make('facebook')
+                                        ->label('Facebook')
+                                        ->url()
+                                        ->placeholder('https://facebook.com/username')
+                                        ->prefixIcon('heroicon-o-link'),
 
-//                        Forms\Components\TextInput::make('sort_order')
-//                            ->label('Thứ tự sắp xếp')
-//                            ->numeric()
-//                            ->default(0)
-//                            ->helperText('Số nhỏ hơn hiển thị trước'),
-                    ])
-                    ->columns(2),
+                                    Forms\Components\TextInput::make('linkedin')
+                                        ->label('LinkedIn')
+                                        ->url()
+                                        ->placeholder('https://linkedin.com/in/username')
+                                        ->prefixIcon('heroicon-o-link'),
 
-                Forms\Components\Section::make('Biography')
-                    ->description('Giới thiệu về giảng viên')
-                    ->schema([
-                        Forms\Components\Textarea::make('bio')
-                            ->label('Tiểu sử')
-                            ->rows(4)
-                            ->maxLength(1000)
-                            ->placeholder('Giới thiệu ngắn về giảng viên, kinh nghiệm, chuyên môn...')
-                            ->columnSpanFull(),
+                                    Forms\Components\TextInput::make('website')
+                                        ->label('Website')
+                                        ->url()
+                                        ->placeholder('https://yourwebsite.com')
+                                        ->prefixIcon('heroicon-o-globe-alt'),
+                                ])
+                                ->columns(3)
+                                ->collapsed(),
+                        ])->columnSpan(8),
+
+                        Forms\Components\Group::make([
+                            Forms\Components\Section::make('Trạng thái')
+                                ->schema([
+                                    Forms\Components\Toggle::make('is_active')
+                                        ->label('Kích hoạt')
+                                        ->default(true)
+                                        ->helperText('Hiển thị giảng viên trên website'),
+                                ]),
+
+                            Forms\Components\Section::make('Ảnh đại diện')
+                                ->schema([
+                                    Forms\Components\FileUpload::make('avatar')
+                                        ->hiddenLabel()
+                                        ->image()
+                                        ->disk('public')
+                                        ->directory('authors/avatars')
+                                        ->visibility('public')
+                                        ->imageEditor()
+                                        ->imageEditorAspectRatios([
+                                            '1:1',
+                                        ])
+                                        ->maxSize(2048) // 2MB
+                                        ->helperText('Kích thước: 400x400px. Tối đa 2MB.')
+                                        ->columnSpanFull(),
+                                ]),
+                        ])->columnSpan(4),
                     ]),
-
-                Forms\Components\Section::make('Social Links')
-                    ->description('Liên kết mạng xã hội')
-                    ->schema([
-                        Forms\Components\TextInput::make('facebook')
-                            ->label('Facebook')
-                            ->url()
-                            ->placeholder('https://facebook.com/username')
-                            ->prefixIcon('heroicon-o-link'),
-
-                        Forms\Components\TextInput::make('linkedin')
-                            ->label('LinkedIn')
-                            ->url()
-                            ->placeholder('https://linkedin.com/in/username')
-                            ->prefixIcon('heroicon-o-link'),
-
-                        Forms\Components\TextInput::make('website')
-                            ->label('Website')
-                            ->url()
-                            ->placeholder('https://yourwebsite.com')
-                            ->prefixIcon('heroicon-o-globe-alt'),
-                    ])
-                    ->columns(3)
-                    ->collapsed(), // Thu gọn mặc định
             ]);
     }
 
