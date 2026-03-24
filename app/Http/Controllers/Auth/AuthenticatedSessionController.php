@@ -12,14 +12,22 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
 
 class AuthenticatedSessionController extends Controller
 {
+    private const OTP_EXPIRES_MINUTES = 5;
+
+    private const OTP_RESEND_COOLDOWN_SECONDS = 60;
+
+    private const OTP_RESEND_LIMIT_PER_WINDOW = 3;
+
+    private const OTP_RESEND_WINDOW_MINUTES = 15;
+
     public function __construct(
         protected OtpService $otpService,
     ) {
@@ -56,8 +64,10 @@ class AuthenticatedSessionController extends Controller
         $rawPhone = (string) $request->input('phone');
         $phone = VietnamPhone::normalize($data['phone']);
         $user = User::query()->where('phone', $phone)->first() ?? $this->createOtpOnlyUser($phone);
-        $ip = (string) $request->ip();
-        $verifyKey = 'login-otp-verify:'.$ip;
+
+        if ($blockMessage = $this->getDailyOtpBlockMessage($phone)) {
+            return $this->otpErrorResponse($request, 'otp', $blockMessage);
+        }
 
         $pendingOtp = PhoneOtp::query()->firstOrNew([
             'phone' => $phone,
@@ -65,58 +75,81 @@ class AuthenticatedSessionController extends Controller
             'sent_count' => 0,
         ]);
 
-        if ($pendingOtp->last_sent_at && $pendingOtp->last_sent_at->gt(now()->subMinutes(15)) && (int) $pendingOtp->sent_count >= 5) {
-            return $this->otpErrorResponse($request, 'phone', 'Bạn đã gửi OTP khoảng 5 lần. Vui lòng thử lại sau 15 phút.');
+        if ($pendingOtp->exists && $pendingOtp->purpose !== 'login') {
+            $pendingOtp->sent_count = 0;
+            $pendingOtp->attempts_count = 0;
+            $pendingOtp->last_sent_at = null;
+            $pendingOtp->consumed_at = null;
+            $pendingOtp->verified_at = null;
         }
 
-        $shouldRefreshOtp = ! $pendingOtp->exists
-            || ! $pendingOtp->expires_at
-            || $pendingOtp->expires_at->isPast()
-            || $pendingOtp->consumed_at
-            || (int) $pendingOtp->attempts_count >= (int) $pendingOtp->max_attempts;
+        $now = now();
 
-        $otp = $shouldRefreshOtp
-            ? (string) random_int(100000, 999999)
-            : (string) $pendingOtp->otp;
+        if ($pendingOtp->last_sent_at && $pendingOtp->last_sent_at->lte($now->copy()->subMinutes(self::OTP_RESEND_WINDOW_MINUTES))) {
+            $pendingOtp->sent_count = 0;
+        }
+
+        if ($pendingOtp->last_sent_at && $pendingOtp->last_sent_at->diffInSeconds($now) < self::OTP_RESEND_COOLDOWN_SECONDS) {
+            $remaining = self::OTP_RESEND_COOLDOWN_SECONDS - $pendingOtp->last_sent_at->diffInSeconds($now);
+
+            return $this->otpErrorResponse(
+                $request,
+                'otp',
+                'Vui lòng đợi '.$remaining.' giây trước khi gửi lại OTP.'
+            );
+        }
+
+        $resendCountInWindow = max(0, ((int) $pendingOtp->sent_count) - 1);
+
+        if (
+            $pendingOtp->last_sent_at
+            && $pendingOtp->last_sent_at->gt($now->copy()->subMinutes(self::OTP_RESEND_WINDOW_MINUTES))
+            && $resendCountInWindow >= self::OTP_RESEND_LIMIT_PER_WINDOW
+        ) {
+            $windowRemainingSeconds = max(
+                60,
+                (self::OTP_RESEND_WINDOW_MINUTES * 60) - $pendingOtp->last_sent_at->diffInSeconds($now)
+            );
+
+            return $this->otpErrorResponse(
+                $request,
+                'otp',
+                'Bạn đã gửi OTP quá '.self::OTP_RESEND_LIMIT_PER_WINDOW.' lần trong 15 phút. Vui lòng thử lại sau '.$this->formatWaitTime($windowRemainingSeconds).'.'
+            );
+        }
+
+        $otp = (string) random_int(100000, 999999);
 
         $pendingOtp->fill([
             'user_id' => $user->id,
             'phone' => $phone,
             'purpose' => 'login',
             'otp' => $otp,
-            'ip_address' => $ip,
-            'expires_at' => $shouldRefreshOtp ? now()->addMinutes(5) : $pendingOtp->expires_at,
-            'attempts_count' => $shouldRefreshOtp ? 0 : $pendingOtp->attempts_count,
+            'ip_address' => (string) $request->ip(),
+            'expires_at' => $now->copy()->addMinutes(self::OTP_EXPIRES_MINUTES),
+            'attempts_count' => 0,
             'max_attempts' => 5,
-            'sent_count' => $pendingOtp->last_sent_at && $pendingOtp->last_sent_at->lte(now()->subMinutes(15))
-                ? 1
-                : ((int) $pendingOtp->sent_count) + 1,
-            'last_sent_at' => now(),
+            'sent_count' => ((int) $pendingOtp->sent_count) + 1,
+            'last_sent_at' => $now,
             'verified_at' => null,
-            'consumed_at' => $shouldRefreshOtp ? null : $pendingOtp->consumed_at,
+            'consumed_at' => null,
         ]);
         $pendingOtp->save();
 
-        if ($shouldRefreshOtp) {
-            try {
-                $this->otpService->sendLoginOtp($phone, $otp);
-            } catch (RuntimeException $exception) {
-                return $this->otpErrorResponse($request, 'phone', $exception->getMessage());
-            }
+        try {
+            $this->otpService->sendLoginOtp($phone, $otp);
+        } catch (RuntimeException $exception) {
+            return $this->otpErrorResponse($request, 'phone', $exception->getMessage());
         }
 
-        RateLimiter::clear($verifyKey);
-
-        $message = $shouldRefreshOtp
-            ? 'OTP đăng nhập đã được gửi. Mã có hiệu lực trong 5 phút.'
-            : 'OTP cũ vẫn còn hiệu lực trong 5 phút.';
+        $message = 'OTP đăng nhập đã được gửi. Mã có hiệu lực trong '.self::OTP_EXPIRES_MINUTES.' phút.';
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'ok' => true,
                 'message' => $message,
                 'phone' => $phone,
-                'resend_in' => 60,
+                'resend_in' => self::OTP_RESEND_COOLDOWN_SECONDS,
                 'csrf_token' => csrf_token(),
             ]);
         }
@@ -165,15 +198,11 @@ class AuthenticatedSessionController extends Controller
 
         $rawPhone = (string) $request->input('phone');
         $phone = VietnamPhone::normalize($data['phone']);
-        $ip = (string) $request->ip();
-        $verifyKey = 'login-otp-verify:'.$ip;
 
-        if (RateLimiter::tooManyAttempts($verifyKey, 10)) {
+        if ($blockMessage = $this->getDailyOtpBlockMessage($phone)) {
             return back()
                 ->withInput(['phone' => $rawPhone])
-                ->withErrors([
-                    'otp' => 'Bạn đã thử xác thực quá nhiều lần từ IP này. Vui lòng thử lại sau 15 phút.',
-                ]);
+                ->withErrors(['otp' => $blockMessage]);
         }
 
         $otpRecord = PhoneOtp::query()
@@ -182,8 +211,6 @@ class AuthenticatedSessionController extends Controller
             ->first();
 
         if (! $otpRecord || $otpRecord->consumed_at || ! $otpRecord->expires_at || $otpRecord->expires_at->isPast()) {
-            RateLimiter::hit($verifyKey, 900);
-
             return back()
                 ->withInput(['phone' => $rawPhone])
                 ->withErrors([
@@ -192,8 +219,6 @@ class AuthenticatedSessionController extends Controller
         }
 
         if ($otpRecord->attempts_count >= $otpRecord->max_attempts) {
-            RateLimiter::hit($verifyKey, 900);
-
             return back()
                 ->withInput(['phone' => $rawPhone])
                 ->withErrors([
@@ -203,16 +228,16 @@ class AuthenticatedSessionController extends Controller
 
         if ($otpRecord->otp !== $data['otp']) {
             $otpRecord->increment('attempts_count');
-            RateLimiter::hit($verifyKey, 900);
+            $this->recordWrongOtpAttempt($phone);
+
+            $blockedMessage = $this->getDailyOtpBlockMessage($phone);
 
             return back()
                 ->withInput(['phone' => $rawPhone])
                 ->withErrors([
-                    'otp' => 'OTP không chính xác.',
+                    'otp' => $blockedMessage ?: 'OTP không chính xác.',
                 ]);
         }
-
-        RateLimiter::clear($verifyKey);
 
         $user = User::query()->find($otpRecord->user_id);
 
@@ -232,11 +257,17 @@ class AuthenticatedSessionController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        if ($user->isAdmin()) {
-            return redirect()->intended('/admin');
+        $fallbackUrl = $user->isAdmin() ? '/admin' : route('dashboard');
+        $intendedUrl = $request->session()->pull('url.intended', $fallbackUrl);
+
+        if (! is_string($intendedUrl) || $intendedUrl === '') {
+            $intendedUrl = $fallbackUrl;
         }
 
-        return redirect()->intended(route('dashboard'));
+        $request->session()->put('otp_password_prompt_user_id', $user->id);
+        $request->session()->put('otp_password_prompt_intended', $intendedUrl);
+
+        return redirect()->route('otp.password.prompt');
     }
 
     public function store(LoginRequest $request): RedirectResponse
@@ -293,5 +324,81 @@ class AuthenticatedSessionController extends Controller
         $visiblePhone = strlen($digits) > 4 ? substr($digits, 0, 4).'...' : $digits;
 
         return 'Học viên '.$visiblePhone;
+    }
+
+    protected function recordWrongOtpAttempt(string $phone): void
+    {
+        $now = now();
+        $dailyWrongKey = $this->dailyWrongAttemptsKey($phone, $now->format('Y-m-d'));
+        $secondsUntilDayEnd = max(60, $now->diffInSeconds($now->copy()->endOfDay()));
+
+        Cache::add($dailyWrongKey, 0, $secondsUntilDayEnd);
+        $dailyWrongAttempts = (int) Cache::increment($dailyWrongKey);
+
+        $blockDuration = $this->resolveBlockDurationByDailyWrongAttempts($dailyWrongAttempts);
+
+        if ($blockDuration <= 0) {
+            return;
+        }
+
+        $blockKey = $this->otpBlockUntilKey($phone);
+        $currentBlockUntil = (int) Cache::get($blockKey, 0);
+        $newBlockUntil = $now->copy()->addSeconds($blockDuration)->timestamp;
+
+        if ($newBlockUntil > $currentBlockUntil) {
+            Cache::put($blockKey, $newBlockUntil, $blockDuration);
+        }
+    }
+
+    protected function getDailyOtpBlockMessage(string $phone): ?string
+    {
+        $blockUntil = (int) Cache::get($this->otpBlockUntilKey($phone), 0);
+        $now = now()->timestamp;
+
+        if ($blockUntil <= $now) {
+            if ($blockUntil > 0) {
+                Cache::forget($this->otpBlockUntilKey($phone));
+            }
+
+            return null;
+        }
+
+        $remainingSeconds = max(1, $blockUntil - $now);
+
+        return 'Bạn đang bị tạm khóa do nhập sai OTP quá nhiều lần. Vui lòng thử lại sau '.$this->formatWaitTime($remainingSeconds).'.';
+    }
+
+    protected function resolveBlockDurationByDailyWrongAttempts(int $dailyWrongAttempts): int
+    {
+        return match (true) {
+            $dailyWrongAttempts >= 20 => 12 * 60 * 60,
+            $dailyWrongAttempts >= 15 => 3 * 60 * 60,
+            $dailyWrongAttempts >= 10 => 60 * 60,
+            $dailyWrongAttempts >= 5 => 15 * 60,
+            default => 0,
+        };
+    }
+
+    protected function dailyWrongAttemptsKey(string $phone, string $date): string
+    {
+        return 'login-otp-wrong-daily:'.sha1($phone.'|'.$date);
+    }
+
+    protected function otpBlockUntilKey(string $phone): string
+    {
+        return 'login-otp-block-until:'.sha1($phone);
+    }
+
+    protected function formatWaitTime(int $seconds): string
+    {
+        if ($seconds >= 3600) {
+            return ceil($seconds / 3600).' giờ';
+        }
+
+        if ($seconds >= 60) {
+            return ceil($seconds / 60).' phút';
+        }
+
+        return $seconds.' giây';
     }
 }

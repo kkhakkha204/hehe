@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\OtpPasswordPromptController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -42,9 +43,21 @@ Route::middleware('guest')->group(function () {
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
+        
+        
+        
 });
-
 Route::middleware('auth')->group(function () {
+            
+    Route::get('login/password-prompt', [OtpPasswordPromptController::class, 'create'])
+        ->name('otp.password.prompt');
+        
+    Route::post('login/password-prompt', [OtpPasswordPromptController::class, 'store'])
+        ->name('otp.password.prompt.store');
+
+    Route::post('login/password-prompt/skip', [OtpPasswordPromptController::class, 'skip'])
+        ->name('otp.password.prompt.skip');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
