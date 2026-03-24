@@ -27,7 +27,7 @@
                     <a href="{{ route('feedback') }}" class="border-b-2 pb-1 text-white transition-colors duration-200 {{ $isFeedbackActive ? 'border-white' : 'border-transparent hover:border-white/70' }}">
                         Feedback
                     </a>
-                    <a href="{{ route('knowledge') }}" class="transition-colors duration-200 {{ $isKnowledgeActive ? 'text-[#ffb800]' : 'text-white hover:text-[#ffb800]' }}">
+                    <a href="{{ route('knowledge') }}" class="border-b-2 pb-1 transition-colors duration-200 {{ $isKnowledgeActive ? 'border-[#ffb800] text-[#ffb800]' : 'border-transparent text-white hover:border-[#ffb800] hover:text-[#ffb800]' }}">
                         Kiến thức Makeup
                     </a>
                 </nav>

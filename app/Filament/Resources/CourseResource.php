@@ -116,29 +116,30 @@ class CourseResource extends Resource
                                                         Forms\Components\TextInput::make('name')->required(),
                                                     ]),
 
-                                                Forms\Components\Select::make('level')
-                                                    ->label('Cấp độ khóa học')
-                                                    ->required()
-                                                    ->options([
-                                                        1 => 'Level 1',
-                                                        2 => 'Level 2',
-                                                        3 => 'Level 3',
-                                                    ])
-                                                    ->default(1)
-                                                    ->native(false),
-
-                                                Forms\Components\Grid::make(2)
+                                                Forms\Components\Grid::make(3)
                                                     ->schema([
+                                                        Forms\Components\Select::make('level')
+                                                            ->label('Cấp độ khóa học')
+                                                            ->required()
+                                                            ->options([
+                                                                1 => 'Level 1',
+                                                                2 => 'Level 2',
+                                                                3 => 'Level 3',
+                                                            ])
+                                                            ->default(1)
+                                                            ->native(false),
+
                                                         Forms\Components\Toggle::make('is_published')
                                                             ->label('Xuất bản')
-                                                            ->default(false),
+                                                            ->default(false)
+                                                            ->inline(false),
 
                                                         Forms\Components\Toggle::make('is_featured')
                                                             ->label('Nổi bật')
-                                                            ->default(false),
+                                                            ->default(false)
+                                                            ->inline(false),
                                                     ])
-                                                    ->columnSpan(1)
-                                                    ->extraAttributes(['style' => 'margin-top: 36px;']),
+                                                    ->columnSpanFull(),
                                             ])
                                             ->columns(2)
                                             ->columnSpan(8),
