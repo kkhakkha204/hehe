@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CourseLandingBuilderController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ComboController;
 use App\Http\Controllers\CourseController;
@@ -21,6 +22,8 @@ Route::view('/kien-thuc-makeup', 'knowledge')->name('knowledge');
 // Danh sách khóa học
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/courses/{slug}/info', [CourseController::class, 'show'])->name('courses.info');
+Route::get('/courses/{slug}/landing', [CourseController::class, 'landing'])->name('courses.landing');
 
 // Chi tiết combo khóa học
 Route::get('/combos/{combo:slug}', [ComboController::class, 'show'])->name('combos.show');
@@ -47,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/learning/{course:slug}', [LearningController::class, 'show'])->name('learning.show');
     Route::get('/learning/{course:slug}/{lesson}', [LearningController::class, 'lesson'])->name('learning.lesson');
     Route::post('/learning/{course:slug}/{lesson}/progress', [LearningController::class, 'updateProgress'])->name('learning.progress');
+    Route::get('/admin/course-landing/{course}', [CourseLandingBuilderController::class, 'edit'])->name('admin.courses.landing.edit');
+    Route::put('/admin/course-landing/{course}', [CourseLandingBuilderController::class, 'update'])->name('admin.courses.landing.update');
 });
 
 require __DIR__.'/auth.php';

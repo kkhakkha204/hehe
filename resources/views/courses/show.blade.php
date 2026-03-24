@@ -8,6 +8,9 @@
             <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
                 <div class="order-2 lg:order-1">
                     <h1 class="heading-font mb-10 max-w-[520px] text-[32px] leading-[1.05] md:text-[40px]">{{ $course->title }}</h1>
+                    <a href="{{ route('courses.landing', $course->slug) }}" class="mb-8 inline-flex items-center rounded-md border border-white/30 px-4 py-2 text-[13px] font-semibold uppercase tracking-wide text-white hover:bg-white/10">
+                        Xem landing page
+                    </a>
 
                     <div class="flex items-center gap-3">
                         @if($course->author->avatar_url)

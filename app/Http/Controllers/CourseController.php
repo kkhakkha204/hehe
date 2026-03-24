@@ -125,4 +125,58 @@ class CourseController extends Controller
 
         return view('courses.show', compact('course', 'relatedCourses', 'isEnrolled', 'progressPercent', 'resumeLesson'));
     }
+
+    public function landing($slug)
+    {
+        $course = Course::with(['category', 'author', 'chapters.lessons'])
+            ->where('slug', $slug)
+            ->where('is_published', true)
+            ->firstOrFail();
+
+        $course->increment('views');
+
+        $relatedCourses = Course::with(['author'])
+            ->where('category_id', $course->category_id)
+            ->where('id', '!=', $course->id)
+            ->where('is_published', true)
+            ->inRandomOrder()
+            ->limit(3)
+            ->get();
+
+        $isEnrolled = false;
+        $progressPercent = 0;
+        $resumeLesson = null;
+
+        if (auth()->check()) {
+            $user = auth()->user();
+
+            $isEnrolled = $user->enrollments()
+                ->where('course_id', $course->id)
+                ->exists();
+
+            if ($isEnrolled) {
+                $completedLessons = LessonProgress::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->whereNotNull('completed_at')
+                    ->count();
+
+                $totalLessons = $course->chapters->pluck('lessons')->flatten()->count();
+
+                $progressPercent = $totalLessons > 0
+                    ? (int) round(($completedLessons / $totalLessons) * 100)
+                    : 0;
+
+                $resumeLesson = LessonProgress::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->latest('last_viewed_at')
+                    ->with('lesson')
+                    ->first()
+                    ?->lesson;
+            }
+        }
+
+        return view('courses.landing', compact('course', 'relatedCourses', 'isEnrolled', 'progressPercent', 'resumeLesson'));
+    }
 }

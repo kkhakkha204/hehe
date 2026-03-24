@@ -1,6 +1,6 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-total="{{ $courses->total() }}">
     @forelse($courses as $course)
-        <a href="{{ route('courses.show', $course->slug) }}" class="group block">
+        <a href="{{ route('courses.landing', $course->slug) }}" class="group block">
             <div class="bg-white border border-gray-200 rounded-md overflow-hidden">
                 <!-- Thumbnail Card -->
                 <div class="aspect-video bg-gray-100 overflow-hidden relative">
@@ -54,7 +54,7 @@
                         </div>
 
                         <!-- Title -->
-                        <h3 class="text-lg font-bold uppercase text-black line-clamp-2 group-hover:text-gray-600 transition">
+                        <h3 class="truncate whitespace-nowrap text-lg font-bold uppercase text-black group-hover:text-gray-600 transition">
                             {{ $course->title }}
                         </h3>
                     </div>

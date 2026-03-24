@@ -15,7 +15,7 @@
                         @if($includedCourses->isNotEmpty())
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 @foreach($includedCourses as $course)
-                                    <a href="{{ route('courses.show', $course->slug) }}" class="flex items-center gap-3 rounded-sm hover:bg-white/10 transition-colors p-1 min-w-0">
+                                    <a href="{{ route('courses.landing', $course->slug) }}" class="flex items-center gap-3 rounded-sm hover:bg-white/10 transition-colors p-1 min-w-0">
                                         <img
                                             src="{{ $course->thumbnail_url ?? asset('storage/nen.webp') }}"
                                             alt="{{ $course->title }}"
@@ -48,7 +48,7 @@
                 <aside class="lg:col-span-1 space-y-8">
                     @php
                         $buyNowUrl = $combo->courses->isNotEmpty()
-                            ? route('courses.show', $combo->courses->first()->slug)
+                            ? route('courses.landing', $combo->courses->first()->slug)
                             : route('courses.index');
                     @endphp
 

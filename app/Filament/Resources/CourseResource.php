@@ -663,6 +663,11 @@ class CourseResource extends Resource
                     ->label('Nổi bật'),
             ])
             ->actions([
+                Tables\Actions\Action::make('landing_builder')
+                    ->label('Landing')
+                    ->icon('heroicon-o-window')
+                    ->url(fn (Course $record): string => route('admin.courses.landing.edit', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
