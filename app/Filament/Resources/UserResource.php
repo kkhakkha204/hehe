@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
@@ -239,6 +240,17 @@ class UserResource extends Resource
                                     'verified_at' => null,
                                     'consumed_at' => null,
                                 ]);
+
+                            $phone = preg_replace('/\D+/', '', (string) $record->phone) ?? '';
+
+                            if (str_starts_with($phone, '0') && strlen($phone) === 10) {
+                                $phone = '84'.substr($phone, 1);
+                            }
+
+                            if ($phone !== '') {
+                                Cache::forget('login-otp-block-until:'.sha1($phone));
+                                Cache::forget('login-otp-wrong-daily:'.sha1($phone.'|'.now()->format('Y-m-d')));
+                            }
                         })
                         ->successNotificationTitle('Đã reset chặn OTP'),
 

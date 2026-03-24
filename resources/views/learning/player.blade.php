@@ -71,9 +71,29 @@
 
 <div
     x-data="{
-        sidebarOpen: true,
+        sidebarOpen: window.innerWidth >= 1024,
+        isMobile: window.innerWidth < 1024,
         commentsOpen: false,
         theme: localStorage.getItem('learning-player-theme') ?? 'dark',
+        init() {
+            window.addEventListener('resize', () => {
+                const nextIsMobile = window.innerWidth < 1024;
+                if (nextIsMobile === this.isMobile) {
+                    return;
+                }
+
+                this.isMobile = nextIsMobile;
+                this.sidebarOpen = !nextIsMobile;
+            });
+        },
+        toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        },
+        closeSidebarIfMobile() {
+            if (this.isMobile) {
+                this.sidebarOpen = false;
+            }
+        },
         setTheme(nextTheme) {
             this.theme = nextTheme;
             localStorage.setItem('learning-player-theme', nextTheme);
@@ -83,13 +103,13 @@
         }
     }"
     :class="theme === 'dark' ? 'bg-[#171717] text-white' : 'bg-[#f5f1e8] text-[#161616]'"
-    class="flex h-screen flex-col transition-colors duration-300"
+    class="relative flex h-screen flex-col transition-colors duration-300"
 >
     <header
         :class="theme === 'dark' ? 'border-white/10 bg-[#2b2b2b]' : 'border-black/10 bg-[#e7dfd0]'"
         class="flex h-14 items-center justify-between border-b px-3 md:px-5"
     >
-        <div class="flex min-w-0 items-center gap-3">
+        <div class="flex min-w-0 items-center gap-2 md:gap-3">
             <a
                 href="{{ route('courses.show', $course->slug) }}"
                 :class="theme === 'dark' ? 'text-white/80 hover:bg-white/10 hover:text-white' : 'text-black/70 hover:bg-black/5 hover:text-black'"
@@ -102,11 +122,11 @@
 
             <button
                 type="button"
-                @click="sidebarOpen = !sidebarOpen"
+                @click="toggleSidebar()"
                 :class="theme === 'dark' ? 'bg-white/10 text-white/90 hover:bg-white/15' : 'bg-black/5 text-black/80 hover:bg-black/10'"
-                class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition"
+                class="inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2.5 py-2 text-[13px] font-medium leading-none transition sm:px-3 sm:text-sm"
             >
-                <span class="mr-2 text-base" x-text="sidebarOpen ? 'x' : '+'"></span>
+                <span class="mr-1.5 inline-flex w-4 items-center justify-center text-base leading-none" x-text="sidebarOpen ? 'x' : '+'"></span>
                 Giáo trình
             </button>
 
@@ -134,7 +154,7 @@
 
             <button
                 type="button"
-                @click="commentsOpen = true"
+                @click="commentsOpen = true; if (isMobile) { sidebarOpen = false; }"
                 :class="theme === 'dark' ? 'text-white/75 hover:bg-white/10 hover:text-white' : 'text-black/70 hover:bg-black/5 hover:text-black'"
                 class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition"
             >
@@ -147,10 +167,24 @@
     </header>
 
     <div class="flex min-h-0 flex-1">
+        <div
+            x-show="isMobile && sidebarOpen"
+            x-transition.opacity.duration.200ms
+            @click="sidebarOpen = false"
+            class="absolute inset-0 z-30 bg-black/45 lg:hidden"
+            style="display: none;"
+        ></div>
+
         <aside
             :class="theme === 'dark' ? 'border-white/10 bg-[#232323]' : 'border-black/10 bg-[#efe8da]'"
-            class="hidden h-full shrink-0 overflow-hidden border-r transition-all duration-300 lg:flex lg:flex-col"
-            :style="sidebarOpen ? 'width: 320px; opacity: 1;' : 'width: 0; opacity: 0;'"
+            class="fixed inset-y-14 left-0 z-40 h-auto w-[320px] max-w-[88vw] overflow-hidden border-r transition-all duration-300 lg:relative lg:inset-auto lg:z-auto lg:h-full lg:max-w-none"
+            :style="isMobile
+                ? (sidebarOpen
+                    ? 'transform: translateX(0); opacity: 1;'
+                    : 'transform: translateX(-100%); opacity: 0; pointer-events: none;')
+                : (sidebarOpen
+                    ? 'width: 320px; opacity: 1;'
+                    : 'width: 0; opacity: 0;')"
         >
             <template x-if="sidebarOpen">
                 <div class="flex h-full flex-col">
@@ -186,6 +220,7 @@
                                     @foreach($chapterItem->lessons as $lessonItem)
                                         <a
                                             href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $lessonItem->id]) }}"
+                                            @click="closeSidebarIfMobile()"
                                             :class="theme === 'dark'
                                                 ? '{{ $lessonItem->id === $lesson->id ? 'bg-white/12' : 'hover:bg-white/5' }}'
                                                 : '{{ $lessonItem->id === $lesson->id ? 'bg-black/10' : 'hover:bg-black/5' }}'"
