@@ -257,7 +257,7 @@ class AuthenticatedSessionController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        $fallbackUrl = $user->isAdmin() ? '/admin' : route('dashboard');
+        $fallbackUrl = $user->isAdmin() ? url('/admin') : route('dashboard');
         $intendedUrl = $request->session()->pull('url.intended', $fallbackUrl);
 
         if (! is_string($intendedUrl) || $intendedUrl === '') {
@@ -276,7 +276,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         if (Auth::user()->isAdmin()) {
-            return redirect()->intended('/admin');
+            return redirect()->intended(url('/admin'));
         }
 
         return redirect()->intended(route('dashboard'));
@@ -288,7 +288,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('home');
     }
 
     protected function createOtpOnlyUser(string $phone): User

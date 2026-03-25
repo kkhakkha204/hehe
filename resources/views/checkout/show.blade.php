@@ -232,7 +232,9 @@
 
                 async checkStatus() {
                     try {
-                        const response = await fetch(`/orders/${orderId}/status`);
+                        const endpoint = '{{ route('orders.status', ['order' => '__ORDER_ID__']) }}'
+                            .replace('__ORDER_ID__', encodeURIComponent(orderId));
+                        const response = await fetch(endpoint);
                         const data = await response.json();
 
                         if (data.is_paid) {

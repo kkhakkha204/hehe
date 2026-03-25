@@ -117,7 +117,7 @@ class AuthorResource extends Resource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('Avatar')
                     ->circular()
-                    ->defaultImageUrl(url('/images/default-avatar.png'))
+                    ->defaultImageUrl(asset('images/default-avatar.png'))
                     ->size(50),
 
                 Tables\Columns\TextColumn::make('name')

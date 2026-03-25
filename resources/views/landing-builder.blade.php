@@ -229,7 +229,7 @@
                 <button type="button" class="landing-btn" id="close-import-modal">Đóng</button>
             </div>
             <div class="landing-modal__body">
-                <p class="landing-modal__hint">Dán code trang vào đây. Hệ thống sẽ lấy nội dung trong &lt;body&gt; để render, và có thể lấy luôn &lt;style&gt; / &lt;script&gt; nếu anh bật tùy chọn.</p>
+                <p class="landing-modal__hint">Dán code trang vào đây. Hệ thống sẽ giữ nguyên các thẻ &lt;link rel="stylesheet"&gt; và script quan trọng từ phần head, nên giao diện import từ Stitch sẽ giữ đúng hơn.</p>
                 <textarea id="import-code" class="landing-modal__textarea" placeholder="Dán HTML đầy đủ hoặc đoạn HTML vào đây..."></textarea>
                 <div class="landing-modal__options">
                     <label class="landing-modal__check">
@@ -261,6 +261,7 @@
         const courseThumbnail = @json($course->thumbnail_url);
         const infoUrl = @json(route('courses.info', $course->slug));
         let manualScriptContent = (initialJs || '').trim();
+        let importedPayload = null;
 
         const defaultCss = `
             .lp-root{font-family:Arial,Helvetica,sans-serif;background:#0d0d0f;color:#fff}
@@ -314,8 +315,29 @@
             },
         });
 
+        const extractEditorSafeHtml = (html) => {
+            const raw = (html || '').trim();
+            if (!raw) {
+                return raw;
+            }
+
+            try {
+                const parsed = new DOMParser().parseFromString(raw, 'text/html');
+                parsed.querySelectorAll('link[rel="stylesheet"], style, script').forEach((el) => el.remove());
+                const bodyHtml = (parsed.body?.innerHTML || '').trim();
+                return bodyHtml || raw;
+            } catch (error) {
+                return raw;
+            }
+        };
+
         const applyDefaultTemplate = () => {
-            editor.setComponents((initialHtml || '').trim() || defaultHtml);
+            const trimmedInitialHtml = (initialHtml || '').trim();
+            const shouldUseInitialHtml = Boolean(trimmedInitialHtml) &&
+                !/^<body[^>]*>\s*<div[^>]*>\s*<\/div>\s*<\/body>$/i.test(trimmedInitialHtml) &&
+                !/^<div[^>]*>\s*<\/div>$/i.test(trimmedInitialHtml);
+
+            editor.setComponents(shouldUseInitialHtml ? extractEditorSafeHtml(trimmedInitialHtml) : defaultHtml);
             editor.setStyle((initialCss || '').trim() || defaultCss);
 
             if (manualScriptContent) {
@@ -325,23 +347,81 @@
                 });
                 editor.getWrapper().append(scriptBlock);
             }
+
+            const initialCssText = (initialCss || '').trim();
+            const initialJsText = (initialJs || '').trim();
+            if (
+                shouldUseInitialHtml &&
+                (
+                    initialCssText.includes('@import url(') ||
+                    initialJsText.includes('data-landing-src') ||
+                    trimmedInitialHtml.includes('<link rel="stylesheet"') ||
+                    trimmedInitialHtml.includes('<script')
+                )
+            ) {
+                importedPayload = {
+                    html: trimmedInitialHtml,
+                    css: initialCssText,
+                    js: manualScriptContent,
+                    lockRawOnSave: true,
+                };
+            }
         };
 
         const hasRenderableContent = (html) => {
-            if (!(html || '').trim()) {
+            const rawHtml = (html || '').trim();
+            if (!rawHtml) {
+                return false;
+            }
+
+            if (
+                /^<body[^>]*>\s*<div[^>]*>\s*<\/div>\s*<\/body>$/i.test(rawHtml) ||
+                /^<div[^>]*>\s*<\/div>$/i.test(rawHtml)
+            ) {
                 return false;
             }
 
             try {
-                const parsed = new DOMParser().parseFromString(html, 'text/html');
+                const parsed = new DOMParser().parseFromString(rawHtml, 'text/html');
                 const nodes = Array.from(parsed.body.querySelectorAll('*'))
                     .filter((el) => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE');
+                const meaningfulNodes = nodes.filter((el) => {
+                    const tag = el.tagName;
+                    const text = (el.textContent || '').trim();
+                    const hasMediaTag = ['IMG', 'VIDEO', 'IFRAME', 'SVG', 'CANVAS'].includes(tag);
+                    const hasSemanticTag = ['SECTION', 'ARTICLE', 'MAIN', 'HEADER', 'FOOTER', 'NAV', 'H1', 'H2', 'H3', 'P', 'UL', 'OL', 'LI', 'BUTTON', 'A'].includes(tag);
+                    const hasNonTrivialAttrs = Array.from(el.attributes || []).some((attr) => !['id', 'class', 'style'].includes(attr.name));
 
-                return nodes.length > 0 || (parsed.body.textContent || '').trim().length > 0;
+                    return hasMediaTag || hasSemanticTag || text.length > 0 || hasNonTrivialAttrs;
+                });
+
+                return meaningfulNodes.length > 0 || (parsed.body.textContent || '').trim().length > 0;
             } catch (error) {
-                return (html || '').trim().length > 0;
+                return rawHtml.length > 0;
             }
         };
+
+        const normalizeEditorHtml = (html) => {
+            const raw = (html || '').trim();
+            if (!raw) {
+                return '';
+            }
+
+            try {
+                const parsed = new DOMParser().parseFromString(raw, 'text/html');
+                const body = parsed.body;
+                if (!body) {
+                    return raw;
+                }
+
+                const bodyInner = (body.innerHTML || '').trim();
+                return bodyInner || raw;
+            } catch (error) {
+                return raw;
+            }
+        };
+
+        const normalizeEditorCss = (css) => (css || '').trim();
 
         const openImportModal = () => {
             document.getElementById('import-modal').classList.add('is-open');
@@ -355,19 +435,43 @@
         const parseImportedSnippet = (rawSnippet) => {
             const parsed = new DOMParser().parseFromString(rawSnippet, 'text/html');
             const bodyHtml = (parsed.body?.innerHTML || '').trim();
-            const styleText = Array.from(parsed.querySelectorAll('style'))
-                .map((el) => el.textContent || '')
-                .join('\n')
-                .trim();
-            const scriptText = Array.from(parsed.querySelectorAll('script'))
-                .map((el) => el.textContent || '')
-                .join('\n')
-                .trim();
+            const htmlClass = (parsed.documentElement?.getAttribute('class') || '').trim();
+            const bodyClass = (parsed.body?.getAttribute('class') || '').trim();
+            const bodyStyle = (parsed.body?.getAttribute('style') || '').trim();
+
+            const escapeAttr = (value) => String(value || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('"', '&quot;');
+
+            const wrapperClasses = [htmlClass, bodyClass].filter(Boolean).join(' ').trim();
+            const wrapperAttrs = [];
+            if (wrapperClasses) {
+                wrapperAttrs.push(`class="${escapeAttr(wrapperClasses)}"`);
+            }
+            if (bodyStyle) {
+                wrapperAttrs.push(`style="${escapeAttr(bodyStyle)}"`);
+            }
+
+            const htmlContent = bodyHtml || rawSnippet.trim();
+            const wrappedHtml = wrapperAttrs.length > 0
+                ? `<div ${wrapperAttrs.join(' ')}>${htmlContent}</div>`
+                : htmlContent;
+
+            const headAssetTags = Array.from(parsed.querySelectorAll('head > link, head > style, head > script'))
+                .map((el) => {
+                    const tag = (el.tagName || '').toLowerCase();
+                    return {
+                        tag,
+                        raw: (el.outerHTML || '').trim(),
+                        styleText: tag === 'style' ? (el.textContent || '').trim() : '',
+                    };
+                })
+                .filter((item) => item.raw);
 
             return {
-                html: bodyHtml || rawSnippet.trim(),
-                css: styleText,
-                js: scriptText,
+                html: wrappedHtml,
+                editorHtml: wrappedHtml,
+                headAssetTags,
             };
         };
 
@@ -378,21 +482,53 @@
                 return;
             }
 
-            const { html, css, js } = parseImportedSnippet(rawSnippet);
+            const { html, editorHtml, headAssetTags } = parseImportedSnippet(rawSnippet);
             if (!html.trim()) {
                 alert('Không đọc được HTML hợp lệ từ đoạn code vừa dán.');
                 return;
             }
 
-            editor.setComponents(html);
+            const keepCss = document.getElementById('import-css').checked;
+            const keepJs = document.getElementById('import-js').checked;
 
-            if (document.getElementById('import-css').checked && css) {
-                editor.setStyle(css);
+            const selectedHeadAssets = headAssetTags.filter((item) => {
+                if (item.tag === 'link') {
+                    return true;
+                }
+                if (item.tag === 'style') {
+                    return keepCss;
+                }
+                if (item.tag === 'script') {
+                    return keepJs;
+                }
+
+                return false;
+            });
+
+            const previewCss = selectedHeadAssets
+                .filter((item) => item.tag === 'style' && item.styleText)
+                .map((item) => item.styleText)
+                .join('\n');
+
+            const htmlWithHeadAssets = [
+                Array.from(new Set(selectedHeadAssets.map((item) => item.raw))).join('\n'),
+                html,
+            ].filter(Boolean).join('\n');
+
+            editor.setComponents(editorHtml || html);
+
+            if (keepCss && previewCss) {
+                editor.setStyle(previewCss);
             }
 
-            if (document.getElementById('import-js').checked) {
-                manualScriptContent = js || '';
-            }
+            manualScriptContent = '';
+
+            importedPayload = {
+                html: htmlWithHeadAssets,
+                css: '',
+                js: '',
+                lockRawOnSave: true,
+            };
 
             closeImportModal();
             resizeEditor();
@@ -414,37 +550,7 @@
             }
         };
 
-        const hasUsableProjectData = (() => {
-            if (!initialProjectData || typeof initialProjectData !== 'object') {
-                return false;
-            }
-
-            if (Array.isArray(initialProjectData)) {
-                return false;
-            }
-
-            const pages = initialProjectData.pages;
-
-            if (Array.isArray(pages) && pages.length > 0) {
-                return true;
-            }
-
-            if (pages && typeof pages === 'object' && Object.keys(pages).length > 0) {
-                return true;
-            }
-
-            return Object.keys(initialProjectData).length > 0 && !!initialProjectData.styles;
-        })();
-
-        try {
-            if (hasUsableProjectData) {
-                editor.loadProjectData(initialProjectData);
-            } else {
-                applyDefaultTemplate();
-            }
-        } catch (error) {
-            applyDefaultTemplate();
-        }
+        applyDefaultTemplate();
 
         editor.on('load', () => {
             if (!hasRenderableContent(editor.getHtml())) {
@@ -471,13 +577,37 @@
         });
 
         document.getElementById('save-landing').addEventListener('click', function () {
-            document.getElementById('landing_html').value = editor.getHtml();
-            document.getElementById('landing_css').value = editor.getCss();
-            const jsChunks = [manualScriptContent, editor.getJs()]
-                .map((item) => (item || '').trim())
-                .filter((item) => item.length > 0);
-            document.getElementById('landing_js').value = Array.from(new Set(jsChunks)).join('\n\n');
-            document.getElementById('landing_project_data').value = JSON.stringify(editor.getProjectData());
+            let htmlValue = normalizeEditorHtml(editor.getHtml());
+            let cssValue = normalizeEditorCss(editor.getCss());
+            let projectDataValue = '';
+
+            const htmlLooksEmpty = !hasRenderableContent(htmlValue) || /^<div[^>]*>\s*<\/div>$/i.test(htmlValue);
+            const cssLooksDefault = !cssValue || cssValue === '* { box-sizing: border-box; } body {margin: 0;}';
+
+            if (importedPayload?.lockRawOnSave) {
+                htmlValue = importedPayload.html || htmlValue;
+                cssValue = importedPayload.css || cssValue;
+                manualScriptContent = importedPayload.js || manualScriptContent;
+            }
+
+            if (importedPayload && htmlLooksEmpty) {
+                htmlValue = importedPayload.html;
+            }
+            if (importedPayload && cssLooksDefault && importedPayload.css) {
+                cssValue = importedPayload.css;
+            }
+
+            document.getElementById('landing_html').value = htmlValue;
+            document.getElementById('landing_css').value = cssValue;
+            if (importedPayload?.lockRawOnSave) {
+                document.getElementById('landing_js').value = '';
+            } else {
+                const jsChunks = [manualScriptContent, editor.getJs()]
+                    .map((item) => (item || '').trim())
+                    .filter((item) => item.length > 0);
+                document.getElementById('landing_js').value = Array.from(new Set(jsChunks)).join('\n\n');
+            }
+            document.getElementById('landing_project_data').value = projectDataValue;
             document.getElementById('landing-form').submit();
         });
     </script>
