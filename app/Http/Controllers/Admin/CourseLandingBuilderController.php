@@ -39,10 +39,59 @@ class CourseLandingBuilderController extends Controller
             'landing_css' => ['nullable', 'string'],
             'landing_js' => ['nullable', 'string'],
             'landing_project_data' => ['nullable', 'string'],
+            'landing_html_b64' => ['nullable', 'string'],
+            'landing_css_b64' => ['nullable', 'string'],
+            'landing_js_b64' => ['nullable', 'string'],
+            'landing_project_data_b64' => ['nullable', 'string'],
         ]);
 
-        if (filled($data['landing_project_data'] ?? null)) {
-            $decoded = json_decode((string) $data['landing_project_data'], true);
+        $landingHtml = $data['landing_html'] ?? null;
+        $landingCss = $data['landing_css'] ?? null;
+        $landingJs = $data['landing_js'] ?? null;
+        $landingProjectData = $data['landing_project_data'] ?? null;
+
+        if (filled($data['landing_html_b64'] ?? null)) {
+            $decoded = $this->decodeBase64Utf8((string) $data['landing_html_b64']);
+            if ($decoded === null) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['landing_html' => 'HTML landing không hợp lệ. Vui lòng thử lại.']);
+            }
+            $landingHtml = $decoded;
+        }
+
+        if (filled($data['landing_css_b64'] ?? null)) {
+            $decoded = $this->decodeBase64Utf8((string) $data['landing_css_b64']);
+            if ($decoded === null) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['landing_css' => 'CSS landing không hợp lệ. Vui lòng thử lại.']);
+            }
+            $landingCss = $decoded;
+        }
+
+        if (filled($data['landing_js_b64'] ?? null)) {
+            $decoded = $this->decodeBase64Utf8((string) $data['landing_js_b64']);
+            if ($decoded === null) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['landing_js' => 'JS landing không hợp lệ. Vui lòng thử lại.']);
+            }
+            $landingJs = $decoded;
+        }
+
+        if (filled($data['landing_project_data_b64'] ?? null)) {
+            $decoded = $this->decodeBase64Utf8((string) $data['landing_project_data_b64']);
+            if ($decoded === null) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['landing_project_data' => 'Project data không hợp lệ. Vui lòng thử lại.']);
+            }
+            $landingProjectData = $decoded;
+        }
+
+        if (filled($landingProjectData)) {
+            $decoded = json_decode((string) $landingProjectData, true);
             if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
                 return back()
                     ->withInput()
@@ -55,10 +104,10 @@ class CourseLandingBuilderController extends Controller
         $course->fill([
             'landing_title' => $data['landing_title'] ?? null,
             'landing_enabled' => $request->boolean('landing_enabled'),
-            'landing_html' => $data['landing_html'] ?? null,
-            'landing_css' => $data['landing_css'] ?? null,
-            'landing_js' => $data['landing_js'] ?? null,
-            'landing_project_data' => $data['landing_project_data'] ?? null,
+            'landing_html' => $landingHtml,
+            'landing_css' => $landingCss,
+            'landing_js' => $landingJs,
+            'landing_project_data' => $landingProjectData,
         ]);
         $course->save();
 
@@ -68,5 +117,16 @@ class CourseLandingBuilderController extends Controller
     protected function ensureAdmin(Request $request): void
     {
         abort_unless($request->user() && $request->user()->isAdmin(), 403);
+    }
+
+    private function decodeBase64Utf8(string $encoded): ?string
+    {
+        $decoded = base64_decode($encoded, true);
+
+        if ($decoded === false) {
+            return null;
+        }
+
+        return $decoded;
     }
 }

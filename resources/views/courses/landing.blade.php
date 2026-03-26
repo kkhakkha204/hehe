@@ -7,6 +7,9 @@
         $firstLesson = $course->chapters->pluck('lessons')->flatten()->first();
         $totalLessons = $course->chapters->pluck('lessons')->flatten()->count();
         $hasCustomLanding = (bool) $course->landing_enabled && filled($course->landing_html);
+        $landingHeadStyles = $landingPayload['head_styles'] ?? [];
+        $landingHeadScripts = $landingPayload['head_scripts'] ?? [];
+        $landingBodyHtml = $landingPayload['body_html'] ?? (string) ($course->landing_html ?? '');
 
         if ($course->isFree()) {
             if (! auth()->check()) {
@@ -40,12 +43,24 @@
     @endphp
 
     @if ($hasCustomLanding)
+        @if (count($landingHeadStyles))
+            @push('styles')
+                {!! implode("\n", $landingHeadStyles) !!}
+            @endpush
+        @endif
+
+        @if (count($landingHeadScripts))
+            @push('scripts')
+                {!! implode("\n", $landingHeadScripts) !!}
+            @endpush
+        @endif
+
         @if (filled($course->landing_css))
             <style>{!! $course->landing_css !!}</style>
         @endif
 
         <div class="custom-landing-wrapper">
-            {!! $course->landing_html !!}
+            {!! $landingBodyHtml !!}
         </div>
 
         @if (filled($course->landing_js))

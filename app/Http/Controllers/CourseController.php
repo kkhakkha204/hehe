@@ -6,7 +6,11 @@ use App\Models\Category;
 use App\Models\Combo;
 use App\Models\Course;
 use App\Models\LessonProgress;
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
 use Illuminate\Http\Request;
+use Throwable;
 
 class CourseController extends Controller
 {
@@ -135,6 +139,25 @@ class CourseController extends Controller
 
         $course->increment('views');
 
+        $hasCustomLanding = (bool) $course->landing_enabled && filled($course->landing_html);
+
+        if ($hasCustomLanding) {
+            $landingHtml = (string) $course->landing_html;
+
+            // When a full HTML document is pasted from external builders (e.g. Stitch),
+            // return it as-is so all <head> assets and script execution order are preserved.
+            if ($this->isFullHtmlDocument($landingHtml)) {
+                $landingHtml = $this->injectInlineAssetsIntoDocument(
+                    $landingHtml,
+                    (string) ($course->landing_css ?? ''),
+                    (string) ($course->landing_js ?? ''),
+                );
+
+                return response($landingHtml, 200)
+                    ->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+        }
+
         $relatedCourses = Course::with(['author'])
             ->where('category_id', $course->category_id)
             ->where('id', '!=', $course->id)
@@ -177,6 +200,138 @@ class CourseController extends Controller
             }
         }
 
-        return view('courses.landing', compact('course', 'relatedCourses', 'isEnrolled', 'progressPercent', 'resumeLesson'));
+        $landingPayload = $this->extractLandingAssets((string) ($course->landing_html ?? ''));
+
+        return view('courses.landing', compact(
+            'course',
+            'relatedCourses',
+            'isEnrolled',
+            'progressPercent',
+            'resumeLesson',
+            'landingPayload',
+        ));
+    }
+
+    private function isFullHtmlDocument(string $html): bool
+    {
+        $rawHtml = trim($html);
+
+        if ($rawHtml === '') {
+            return false;
+        }
+
+        return preg_match('/<!doctype\s+html|<html[\s>]|<head[\s>]/i', $rawHtml) === 1;
+    }
+
+    private function injectInlineAssetsIntoDocument(string $html, string $css = '', string $js = ''): string
+    {
+        $result = $html;
+        $trimmedCss = trim($css);
+        $trimmedJs = trim($js);
+
+        if ($trimmedCss !== '') {
+            $styleTag = "<style>\n{$trimmedCss}\n</style>";
+
+            if (preg_match('/<\/head>/i', $result) === 1) {
+                $result = preg_replace('/<\/head>/i', $styleTag . "\n</head>", $result, 1) ?? ($styleTag . "\n" . $result);
+            } else {
+                $result = $styleTag . "\n" . $result;
+            }
+        }
+
+        if ($trimmedJs !== '') {
+            $scriptTag = "<script>\n{$trimmedJs}\n</script>";
+
+            if (preg_match('/<\/body>/i', $result) === 1) {
+                $result = preg_replace('/<\/body>/i', $scriptTag . "\n</body>", $result, 1) ?? ($result . "\n" . $scriptTag);
+            } else {
+                $result .= "\n" . $scriptTag;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Split custom landing HTML into:
+     * - body_html: markup to render inside page body
+     * - head_styles: <link>/<style> tags that should be injected in <head>
+     * - head_scripts: <script> tags from <head> to keep external libraries working
+     */
+    private function extractLandingAssets(string $html): array
+    {
+        $rawHtml = trim($html);
+
+        if ($rawHtml === '') {
+            return [
+                'body_html' => '',
+                'head_styles' => [],
+                'head_scripts' => [],
+            ];
+        }
+
+        $bodyHtml = $rawHtml;
+        $headStyles = [];
+        $headScripts = [];
+
+        $internalErrorsState = libxml_use_internal_errors(true);
+
+        try {
+            $document = new DOMDocument();
+            $loaded = $document->loadHTML('<?xml encoding="utf-8" ?>' . $rawHtml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+
+            if ($loaded) {
+                $xpath = new DOMXPath($document);
+
+                foreach ($xpath->query('//head/link|//head/style') ?: [] as $node) {
+                    if ($node instanceof DOMNode) {
+                        $markup = trim((string) $document->saveHTML($node));
+
+                        if ($markup !== '') {
+                            $headStyles[] = $markup;
+                        }
+                    }
+                }
+
+                foreach ($xpath->query('//head/script') ?: [] as $node) {
+                    if ($node instanceof DOMNode) {
+                        $markup = trim((string) $document->saveHTML($node));
+
+                        if ($markup !== '') {
+                            $headScripts[] = $markup;
+                        }
+                    }
+                }
+
+                $bodyNode = $xpath->query('//body')->item(0);
+
+                if ($bodyNode instanceof DOMNode) {
+                    $bodyHtml = $this->innerHtml($bodyNode);
+                }
+            }
+        } catch (Throwable) {
+            // Fallback to raw HTML if parsing fails.
+            $bodyHtml = $rawHtml;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($internalErrorsState);
+        }
+
+        return [
+            'body_html' => $bodyHtml ?: $rawHtml,
+            'head_styles' => array_values(array_unique($headStyles)),
+            'head_scripts' => array_values(array_unique($headScripts)),
+        ];
+    }
+
+    private function innerHtml(DOMNode $node): string
+    {
+        $html = '';
+
+        foreach ($node->childNodes as $child) {
+            $html .= $node->ownerDocument?->saveHTML($child) ?? '';
+        }
+
+        return trim($html);
     }
 }

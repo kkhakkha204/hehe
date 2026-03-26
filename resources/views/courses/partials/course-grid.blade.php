@@ -3,7 +3,7 @@
         <a href="{{ route('courses.landing', $course->slug) }}" class="group block">
             <div class="bg-white border border-gray-200 rounded-md overflow-hidden">
                 <!-- Thumbnail Card -->
-                <div class="aspect-video bg-gray-100 overflow-hidden relative">
+                <div class="h-[220px] sm:h-[240px] md:h-[260px] lg:h-[280px] bg-gray-100 overflow-hidden relative">
                     @if($course->thumbnail_url)
                         <img
                             src="{{ $course->thumbnail_url }}"
@@ -54,7 +54,7 @@
                         </div>
 
                         <!-- Title -->
-                        <h3 class="truncate whitespace-nowrap text-lg font-bold uppercase text-black group-hover:text-gray-600 transition">
+                        <h3 title="{{ $course->title }}" class="truncate whitespace-nowrap text-lg font-bold uppercase text-black group-hover:text-gray-600 transition">
                             {{ $course->title }}
                         </h3>
                     </div>
