@@ -55,7 +55,7 @@ class CourseLandingBuilderController extends Controller
             if ($decoded === null) {
                 return back()
                     ->withInput()
-                    ->withErrors(['landing_html' => 'HTML landing không hợp lệ. Vui lòng thử lại.']);
+                    ->withErrors(['landing_html' => 'HTML landing khong hop le. Vui long thu lai.']);
             }
             $landingHtml = $decoded;
         }
@@ -65,7 +65,7 @@ class CourseLandingBuilderController extends Controller
             if ($decoded === null) {
                 return back()
                     ->withInput()
-                    ->withErrors(['landing_css' => 'CSS landing không hợp lệ. Vui lòng thử lại.']);
+                    ->withErrors(['landing_css' => 'CSS landing khong hop le. Vui long thu lai.']);
             }
             $landingCss = $decoded;
         }
@@ -75,7 +75,7 @@ class CourseLandingBuilderController extends Controller
             if ($decoded === null) {
                 return back()
                     ->withInput()
-                    ->withErrors(['landing_js' => 'JS landing không hợp lệ. Vui lòng thử lại.']);
+                    ->withErrors(['landing_js' => 'JS landing khong hop le. Vui long thu lai.']);
             }
             $landingJs = $decoded;
         }
@@ -85,7 +85,7 @@ class CourseLandingBuilderController extends Controller
             if ($decoded === null) {
                 return back()
                     ->withInput()
-                    ->withErrors(['landing_project_data' => 'Project data không hợp lệ. Vui lòng thử lại.']);
+                    ->withErrors(['landing_project_data' => 'Project data khong hop le. Vui long thu lai.']);
             }
             $landingProjectData = $decoded;
         }
@@ -96,14 +96,16 @@ class CourseLandingBuilderController extends Controller
                 return back()
                     ->withInput()
                     ->withErrors([
-                        'landing_project_data' => 'Dữ liệu landing page không hợp lệ. Vui lòng thử lại.',
+                        'landing_project_data' => 'Du lieu landing page khong hop le. Vui long thu lai.',
                     ]);
             }
         }
 
+        $hasCustomLanding = filled(is_string($landingHtml) ? trim($landingHtml) : $landingHtml);
+
         $course->fill([
             'landing_title' => $data['landing_title'] ?? null,
-            'landing_enabled' => $request->boolean('landing_enabled'),
+            'landing_enabled' => $hasCustomLanding,
             'landing_html' => $landingHtml,
             'landing_css' => $landingCss,
             'landing_js' => $landingJs,
@@ -111,7 +113,9 @@ class CourseLandingBuilderController extends Controller
         ]);
         $course->save();
 
-        return back()->with('status', 'Đã lưu landing page thành công.');
+        return redirect()
+            ->route('admin.courses.landing.edit', $course)
+            ->with('status', 'Da luu landing page thanh cong.');
     }
 
     protected function ensureAdmin(Request $request): void

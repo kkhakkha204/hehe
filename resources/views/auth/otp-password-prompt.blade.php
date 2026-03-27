@@ -66,3 +66,15 @@
         </div>
     </section>
 @endsection
+
+@push('scripts')
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            const navigationEntry = performance.getEntriesByType('navigation')[0];
+
+            if (event.persisted || navigationEntry?.type === 'back_forward') {
+                window.location.reload();
+            }
+        });
+    </script>
+@endpush

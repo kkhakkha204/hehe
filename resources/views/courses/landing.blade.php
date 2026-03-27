@@ -6,7 +6,7 @@
     @php
         $firstLesson = $course->chapters->pluck('lessons')->flatten()->first();
         $totalLessons = $course->chapters->pluck('lessons')->flatten()->count();
-        $hasCustomLanding = (bool) $course->landing_enabled && filled($course->landing_html);
+        $hasCustomLanding = filled($course->landing_html);
         $landingHeadStyles = $landingPayload['head_styles'] ?? [];
         $landingHeadScripts = $landingPayload['head_scripts'] ?? [];
         $landingBodyHtml = $landingPayload['body_html'] ?? (string) ($course->landing_html ?? '');

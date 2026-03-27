@@ -5,19 +5,24 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class OtpPasswordPromptController extends Controller
 {
-    public function create(Request $request): RedirectResponse|View
+    public function create(Request $request): RedirectResponse|Response
     {
         if (! $this->canShowPrompt($request)) {
             return redirect()->to($this->resolveIntendedUrl($request));
         }
 
-        return view('auth.otp-password-prompt');
+        return response()->view('auth.otp-password-prompt', [], 200, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Fri, 01 Jan 1990 00:00:00 GMT',
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

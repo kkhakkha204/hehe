@@ -139,7 +139,7 @@ class CourseController extends Controller
 
         $course->increment('views');
 
-        $hasCustomLanding = (bool) $course->landing_enabled && filled($course->landing_html);
+        $hasCustomLanding = filled($course->landing_html);
 
         if ($hasCustomLanding) {
             $landingHtml = (string) $course->landing_html;

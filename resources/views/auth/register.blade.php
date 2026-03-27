@@ -71,6 +71,14 @@
 
 @push('scripts')
     <script>
+        window.addEventListener('pageshow', function (event) {
+            const navigationEntry = performance.getEntriesByType('navigation')[0];
+
+            if (event.persisted || navigationEntry?.type === 'back_forward') {
+                window.location.reload();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             [
                 ['toggle-register-password', 'password'],

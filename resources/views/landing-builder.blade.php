@@ -5,787 +5,1153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Landing Builder - {{ $course->title }}</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.22.5/dist/css/grapes.min.css">
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1020;
+            --panel: #10182b;
+            --panel-2: #16223c;
+            --line: rgba(148, 163, 184, 0.18);
+            --text: #e5eefc;
+            --muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-2: #60a5fa;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         html,
         body {
             height: 100%;
         }
+
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f1116;
-            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 24%),
+                radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 20%),
+                var(--bg);
+        }
+
+        .builder-shell {
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
-        .landing-toolbar {
-            height: 64px;
+
+        .builder-toolbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            padding: 0 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            background: #151925;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(10, 15, 28, 0.92);
+            backdrop-filter: blur(18px);
         }
-        .landing-toolbar__left,
-        .landing-toolbar__right {
+
+        .builder-toolbar__group {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
-        .landing-input {
-            height: 36px;
-            border: 1px solid #30384d;
-            background: #0f1422;
-            color: #fff;
-            border-radius: 8px;
-            padding: 0 10px;
-            min-width: 240px;
+
+        .builder-btn,
+        .builder-input,
+        .builder-toggle {
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            font-size: 13px;
         }
-        .landing-btn {
-            height: 36px;
-            border-radius: 8px;
-            border: 1px solid #30384d;
-            background: #1f2a44;
-            color: #fff;
-            padding: 0 12px;
-            cursor: pointer;
-            text-decoration: none;
+
+        .builder-btn {
             display: inline-flex;
             align-items: center;
-            font-size: 13px;
-            font-weight: 600;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 14px;
+            background: var(--panel);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
         }
-        .landing-btn:hover { opacity: .9; }
-        .landing-btn--primary { background: #2f7cff; border-color: #2f7cff; }
-        .landing-status { color: #89f0ae; font-size: 13px; }
-        .landing-error { color: #ff8b8b; font-size: 13px; }
-        #gjs {
-            flex: 1 1 auto;
-            min-height: 320px;
-            min-width: 0;
+
+        .builder-btn:hover {
+            filter: brightness(1.05);
         }
-        #gjs .gjs-editor-cont,
-        #gjs .gjs-cv-canvas,
-        #gjs .gjs-frame-wrapper,
-        #gjs .gjs-frame {
-            min-height: 100%;
+
+        .builder-btn.is-active {
+            border-color: rgba(96, 165, 250, 0.74);
+            background: rgba(59, 130, 246, 0.18);
+            color: #ffffff;
         }
-        .landing-toggle {
+
+        .builder-btn--primary {
+            border-color: rgba(59, 130, 246, 0.6);
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        }
+
+        .builder-input {
+            min-width: 240px;
+            padding: 0 12px;
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        .builder-toggle {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: #d0d8ea;
+            padding: 0 12px;
+            background: var(--panel);
+            color: var(--muted);
         }
-        .landing-toggle input { accent-color: #2f7cff; }
-        .landing-modal {
+
+        .builder-toggle input {
+            accent-color: var(--accent);
+        }
+
+        .builder-toolbar .builder-toggle {
+            display: none;
+        }
+
+        .builder-note,
+        .builder-status,
+        .builder-error {
+            margin: 14px 20px 0;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(16, 24, 43, 0.82);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .builder-note {
+            color: var(--muted);
+        }
+
+        .builder-status {
+            color: var(--success);
+        }
+
+        .builder-error {
+            color: #f87171;
+        }
+
+        .builder-main {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(480px, 1.05fr) minmax(360px, 0.95fr);
+            gap: 16px;
+            padding: 16px 20px 20px;
+        }
+
+        .builder-panel {
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            background: rgba(16, 24, 43, 0.9);
+        }
+
+        .builder-panel__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(22, 34, 60, 0.92);
+        }
+
+        .builder-panel__title {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .builder-panel__subtitle {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .builder-panel__actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .builder-editor {
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 560px;
+            padding: 18px;
+            border: 0;
+            outline: 0;
+            resize: none;
+            background: #0a1222;
+            color: #dbeafe;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            tab-size: 2;
+        }
+
+        .builder-preview-wrap {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+            background: #ffffff;
+        }
+
+        .builder-preview {
+            width: 100%;
+            height: 100%;
+            min-height: 560px;
+            border: 0;
+            background: #ffffff;
+        }
+
+        .builder-preview-state {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(10, 15, 28, 0.82);
+            color: var(--muted);
+            font-size: 12px;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all .18s ease;
+            pointer-events: none;
+        }
+
+        .builder-preview-state.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .builder-visual-tools {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 14px 16px 0;
+        }
+
+        .builder-inspector {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 14px 16px 16px;
+            border-top: 1px solid var(--line);
+            background: rgba(22, 34, 60, 0.9);
+        }
+
+        .builder-inspector.is-hidden {
+            display: none;
+        }
+
+        .builder-inspector__full {
+            grid-column: 1 / -1;
+        }
+
+        .builder-inspector__meta {
+            grid-column: 1 / -1;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .builder-textarea {
+            width: 100%;
+            min-height: 108px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            resize: vertical;
+        }
+
+        .builder-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .builder-field label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .builder-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.65);
-            z-index: 1200;
+            z-index: 90;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        .landing-modal.is-open {
+
+        .builder-modal.is-open {
             display: flex;
         }
-        .landing-modal__content {
-            width: min(900px, 100%);
-            max-height: min(82vh, 760px);
-            background: #151925;
-            border: 1px solid #30384d;
-            border-radius: 12px;
-            overflow: hidden;
+
+        .builder-modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.74);
+            backdrop-filter: blur(8px);
+        }
+
+        .builder-modal__dialog {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 980px);
+            max-height: calc(100vh - 40px);
             display: flex;
             flex-direction: column;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            background: rgba(10, 15, 28, 0.98);
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.5);
         }
-        .landing-modal__header {
+
+        .builder-modal__header,
+        .builder-modal__footer {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            font-size: 15px;
-            font-weight: 700;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(22, 34, 60, 0.92);
         }
-        .landing-modal__body {
-            padding: 14px 16px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow: auto;
+
+        .builder-modal__footer {
+            border-top: 1px solid var(--line);
+            border-bottom: 0;
         }
-        .landing-modal__hint {
-            font-size: 12px;
-            color: #9fb0d8;
-            margin: 0;
+
+        .builder-modal__body {
+            padding: 18px;
+            background: rgba(10, 15, 28, 0.98);
         }
-        .landing-modal__textarea {
-            width: 100%;
-            min-height: 320px;
-            resize: vertical;
-            border: 1px solid #30384d;
-            background: #0f1422;
-            color: #dfe8ff;
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 13px;
-            line-height: 1.6;
+
+        .builder-modal__body .builder-editor {
+            min-height: 380px;
+            height: min(60vh, 520px);
+            border-radius: 14px;
+            border: 1px solid var(--line);
         }
-        .landing-modal__options {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
+
+        @media (max-width: 1180px) {
+            .builder-main {
+                grid-template-columns: 1fr;
+            }
+
+            .builder-editor,
+            .builder-preview {
+                min-height: 460px;
+            }
         }
-        .landing-modal__check {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #d0d8ea;
-        }
-        .landing-modal__footer {
-            padding: 12px 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        @media (max-width: 1000px) {
-            .landing-toolbar {
-                height: auto;
-                flex-direction: column;
+
+        @media (max-width: 720px) {
+            .builder-toolbar,
+            .builder-main {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            .builder-toolbar {
                 align-items: stretch;
-                padding: 12px;
+                flex-direction: column;
             }
-            .landing-toolbar__left,
-            .landing-toolbar__right {
-                flex-wrap: wrap;
+
+            .builder-toolbar__group {
+                width: 100%;
             }
-            .landing-input {
-                min-width: 180px;
-                flex: 1;
+
+            .builder-btn,
+            .builder-input,
+            .builder-toggle {
+                width: 100%;
+            }
+
+            .builder-panel__header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .builder-visual-tools,
+            .builder-inspector {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <form id="landing-form" method="POST" action="{{ route('admin.courses.landing.update', $course) }}">
-        @csrf
-        @method('PUT')
-        <input type="hidden" name="landing_html" id="landing_html">
-        <input type="hidden" name="landing_css" id="landing_css">
-        <input type="hidden" name="landing_js" id="landing_js">
-        <input type="hidden" name="landing_project_data" id="landing_project_data">
-        <input type="hidden" name="landing_html_b64" id="landing_html_b64">
-        <input type="hidden" name="landing_css_b64" id="landing_css_b64">
-        <input type="hidden" name="landing_js_b64" id="landing_js_b64">
-        <input type="hidden" name="landing_project_data_b64" id="landing_project_data_b64">
+    <div class="builder-shell">
+        <form id="landing-form" method="POST" action="{{ route('admin.courses.landing.update', $course) }}">
+            @csrf
+            @method('PUT')
 
-        <div class="landing-toolbar">
-            <div class="landing-toolbar__left">
-                <a href="{{ url('/admin/courses') }}" class="landing-btn">← Quay lại</a>
-                <a href="{{ route('courses.landing', $course->slug) }}" class="landing-btn" target="_blank" rel="noopener">Xem landing public</a>
-                <a href="{{ route('courses.info', $course->slug) }}" class="landing-btn" target="_blank" rel="noopener">Xem trang thông tin</a>
+            <input type="hidden" name="landing_title" id="landing_title" value="{{ old('landing_title', $course->landing_title) }}">
+            <input type="hidden" name="landing_html" id="landing_html">
+            <input type="hidden" name="landing_css" id="landing_css" value="">
+            <input type="hidden" name="landing_js" id="landing_js" value="">
+            <input type="hidden" name="landing_project_data" id="landing_project_data" value="">
+            <input type="hidden" name="landing_html_b64" id="landing_html_b64">
+            <input type="hidden" name="landing_css_b64" id="landing_css_b64" value="">
+            <input type="hidden" name="landing_js_b64" id="landing_js_b64" value="">
+            <input type="hidden" name="landing_project_data_b64" id="landing_project_data_b64" value="">
 
-                <label class="landing-toggle">
-                    <input type="checkbox" name="landing_enabled" value="1" {{ $course->landing_enabled ? 'checked' : '' }}>
-                    Bật landing page custom
-                </label>
-            </div>
+            <div class="builder-toolbar">
+                <div class="builder-toolbar__group">
+                    <a href="{{ url('/admin/courses') }}" class="builder-btn">Quay lại</a>
+                    <a href="{{ route('courses.landing', $course->slug) }}" class="builder-btn" target="_blank" rel="noopener">Xem landing public</a>
+                    <a href="{{ route('courses.info', $course->slug) }}" class="builder-btn" target="_blank" rel="noopener">Xem trang thông tin</a>
+                </div>
 
-            <div class="landing-toolbar__right">
-                <input
-                    type="text"
-                    class="landing-input"
-                    name="landing_title"
-                    placeholder="Tiêu đề landing (SEO / tab)"
-                    value="{{ old('landing_title', $course->landing_title) }}"
-                >
-                <button type="button" id="open-import-modal" class="landing-btn">Dán HTML</button>
-                <button type="button" id="save-landing" class="landing-btn landing-btn--primary">Lưu landing</button>
-            </div>
-        </div>
-    </form>
-
-    @if (session('status'))
-        <div class="landing-status" style="padding: 10px 16px;">{{ session('status') }}</div>
-    @endif
-    @if ($errors->any())
-        <div class="landing-error" style="padding: 10px 16px;">{{ $errors->first() }}</div>
-    @endif
-
-    <div id="gjs"></div>
-
-    <div class="landing-modal" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
-        <div class="landing-modal__content">
-            <div class="landing-modal__header">
-                <span id="import-modal-title">Dán mã HTML/CSS/JS</span>
-                <button type="button" class="landing-btn" id="close-import-modal">Đóng</button>
-            </div>
-            <div class="landing-modal__body">
-                <p class="landing-modal__hint">Dán code trang vào đây. Hệ thống sẽ giữ nguyên các thẻ &lt;link rel="stylesheet"&gt; và script quan trọng từ phần head, nên giao diện import từ Stitch sẽ giữ đúng hơn.</p>
-                <textarea id="import-code" class="landing-modal__textarea" placeholder="Dán HTML đầy đủ hoặc đoạn HTML vào đây..."></textarea>
-                <div class="landing-modal__options">
-                    <label class="landing-modal__check">
-                        <input type="checkbox" id="import-css" checked>
-                        Áp dụng CSS từ thẻ &lt;style&gt;
+                <div class="builder-toolbar__group">
+                    <label class="builder-toggle">
+                        <input type="checkbox" name="landing_enabled" value="1" {{ $course->landing_enabled ? 'checked' : '' }}>
+                        Bật landing custom
                     </label>
-                    <label class="landing-modal__check">
-                        <input type="checkbox" id="import-js" checked>
-                        Áp dụng JS từ thẻ &lt;script&gt;
-                    </label>
+
+                    <button type="button" class="builder-btn" id="paste-from-clipboard">Dán từ clipboard</button>
+                    <button type="button" class="builder-btn" id="refresh-preview">Làm mới preview</button>
+                    <button type="button" class="builder-btn builder-btn--primary" id="save-landing">Lưu landing</button>
                 </div>
             </div>
-            <div class="landing-modal__footer">
-                <button type="button" class="landing-btn" id="cancel-import-modal">Hủy</button>
-                <button type="button" class="landing-btn landing-btn--primary" id="apply-import-modal">Áp dụng vào landing</button>
+        </form>
+
+        @if (session('status'))
+            <div class="builder-status">{{ session('status') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="builder-error">{{ $errors->first() }}</div>
+        @endif
+
+        <div class="builder-main">
+            <section class="builder-panel">
+                <div class="builder-panel__header">
+                    <div>
+                        <div class="builder-panel__title">Full HTML document</div>
+                        <div class="builder-panel__subtitle">Dán nguyên HTML export từ Stitch/Figma vào đây và chỉnh sửa trực tiếp nếu cần.</div>
+                    </div>
+
+                    <div class="builder-panel__actions">
+                        <button type="button" class="builder-btn" id="reset-template">Mẫu mặc định</button>
+                    </div>
+                </div>
+
+                <textarea id="landing-html-editor" class="builder-editor" spellcheck="false"></textarea>
+            </section>
+
+            <section class="builder-panel">
+                <div class="builder-panel__header">
+                    <div>
+                        <div class="builder-panel__title">Preview</div>
+                        <div class="builder-panel__subtitle">Render trực tiếp từ HTML đang sửa.</div>
+                    </div>
+
+                    <div class="builder-panel__actions">
+                        <button type="button" class="builder-btn" id="open-preview-tab">Mở preview tab mới</button>
+                    </div>
+                </div>
+
+                <div class="builder-preview-wrap">
+                    <iframe id="landing-preview" class="builder-preview"></iframe>
+                    <div id="preview-state" class="builder-preview-state">Đang render preview...</div>
+                </div>
+
+                <div class="builder-visual-tools">
+                    <button type="button" class="builder-btn" id="toggle-text-edit">Sửa text trên web</button>
+                </div>
+
+                <div id="builder-inspector" class="builder-inspector is-hidden">
+                    <div class="builder-inspector__meta" id="builder-inspector-meta">Bấm vào phần tử trong preview để sửa.</div>
+
+                    <div class="builder-field">
+                        <label for="inspector-text">Text</label>
+                        <input id="inspector-text" type="text" class="builder-input">
+                    </div>
+
+                    <div class="builder-field">
+                        <label for="inspector-href">Href</label>
+                        <input id="inspector-href" type="text" class="builder-input" placeholder="/courses hoặc https://...">
+                    </div>
+
+                    <div class="builder-field">
+                        <label for="inspector-src">Src</label>
+                        <input id="inspector-src" type="text" class="builder-input" placeholder="https://...">
+                    </div>
+
+                    <div class="builder-field">
+                        <label for="inspector-alt">Alt</label>
+                        <input id="inspector-alt" type="text" class="builder-input">
+                    </div>
+
+                    <div class="builder-field builder-inspector__full">
+                        <label for="inspector-class">Class</label>
+                        <input id="inspector-class" type="text" class="builder-input">
+                    </div>
+
+                    <div class="builder-field builder-inspector__full">
+                        <label for="inspector-style">Inline style</label>
+                        <textarea id="inspector-style" class="builder-textarea"></textarea>
+                    </div>
+
+                    <div class="builder-panel__actions builder-inspector__full">
+                        <button type="button" class="builder-btn" id="apply-element-edit">Cập nhật phần tử</button>
+                        <button type="button" class="builder-btn" id="clear-element-edit">Bỏ chọn</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="paste-html-modal" class="builder-modal" aria-hidden="true">
+        <div class="builder-modal__backdrop" id="paste-html-modal-backdrop"></div>
+
+        <div class="builder-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="paste-html-modal-title">
+            <div class="builder-modal__header">
+                <div>
+                    <div class="builder-panel__title" id="paste-html-modal-title">Dán HTML vào đây</div>
+                    <div class="builder-panel__subtitle">Dán nguyên file HTML export từ Stitch/Figma. Hệ thống sẽ format lại để dễ đọc hơn trước khi render.</div>
+                </div>
+
+                <button type="button" class="builder-btn" id="close-paste-html-modal">Đóng</button>
+            </div>
+
+            <div class="builder-modal__body">
+                <textarea id="paste-html-input" class="builder-editor" spellcheck="false" placeholder="Dán full HTML document vào đây..."></textarea>
+            </div>
+
+            <div class="builder-modal__footer">
+                <div class="builder-panel__subtitle">Sau khi áp dụng, preview sẽ được render lại ngay.</div>
+
+                <div class="builder-panel__actions">
+                    <button type="button" class="builder-btn" id="cancel-paste-html">Hủy</button>
+                    <button type="button" class="builder-btn builder-btn--primary" id="apply-paste-html">Áp dụng HTML</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/grapesjs@0.22.5/dist/grapes.min.js"></script>
-    <script src="https://unpkg.com/grapesjs-preset-webpage@1.0.3/dist/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.4/beautify-html.min.js" referrerpolicy="no-referrer"></script>
     <script>
-        const initialProjectData = @json($projectData);
-        const initialHtml = @json($course->landing_html ?? '');
-        const initialCss = @json($course->landing_css ?? '');
-        const initialJs = @json($course->landing_js ?? '');
+        const existingHtml = @json($course->landing_html ?? '');
+        const existingCss = @json($course->landing_css ?? '');
+        const existingJs = @json($course->landing_js ?? '');
         const courseTitle = @json($course->title);
         const courseDescription = @json(strip_tags((string) $course->description));
         const courseThumbnail = @json($course->thumbnail_url);
-        const infoUrl = @json(route('courses.info', $course->slug));
-        let manualScriptContent = (initialJs || '').trim();
-        let importedPayload = null;
-        let importedHeadAssets = [];
-        let fullDocumentSkeleton = null;
+        const existingLandingTitle = @json(old('landing_title', $course->landing_title));
 
-        const defaultCss = `
-            .lp-root{font-family:Arial,Helvetica,sans-serif;background:#0d0d0f;color:#fff}
-            .lp-hero{max-width:1100px;margin:0 auto;padding:64px 20px;display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
-            .lp-title{font-size:48px;line-height:1.05;margin:0 0 12px;font-weight:800}
-            .lp-desc{font-size:17px;line-height:1.7;color:rgba(255,255,255,.82)}
-            .lp-cta{display:inline-block;margin-top:18px;background:#fff;color:#121212;text-decoration:none;padding:14px 20px;border-radius:12px;font-weight:700}
-            .lp-img{width:100%;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)}
-            .lp-sec{max-width:1100px;margin:0 auto;padding:22px 20px 56px}
-            .lp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-            .lp-card{background:#17181d;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px}
-            .lp-card h3{margin:0 0 8px;font-size:18px}
-            .lp-card p{margin:0;color:rgba(255,255,255,.75);line-height:1.6}
-            @media(max-width:900px){.lp-hero{grid-template-columns:1fr}.lp-title{font-size:34px}.lp-grid{grid-template-columns:1fr}}
-        `;
+        const htmlEditor = document.getElementById('landing-html-editor');
+        const previewFrame = document.getElementById('landing-preview');
+        const previewState = document.getElementById('preview-state');
+        const landingTitleInput = document.getElementById('landing_title');
+        const toggleTextEditButton = document.getElementById('toggle-text-edit');
+        const inspector = document.getElementById('builder-inspector');
+        const inspectorMeta = document.getElementById('builder-inspector-meta');
+        const inspectorText = document.getElementById('inspector-text');
+        const inspectorHref = document.getElementById('inspector-href');
+        const inspectorSrc = document.getElementById('inspector-src');
+        const inspectorAlt = document.getElementById('inspector-alt');
+        const inspectorClass = document.getElementById('inspector-class');
+        const inspectorStyle = document.getElementById('inspector-style');
+        const pasteHtmlModal = document.getElementById('paste-html-modal');
+        const pasteHtmlInput = document.getElementById('paste-html-input');
 
-        const defaultHtml = `
-            <div class="lp-root">
-                <section class="lp-hero">
-                    <div>
-                        <h1 class="lp-title">${courseTitle}</h1>
-                        <p class="lp-desc">${courseDescription || 'Landing giới thiệu khoá học. Hãy chỉnh sửa nội dung, feedback, hình ảnh, lợi ích và CTA theo chiến dịch của bạn.'}</p>
-                        <a href="${infoUrl}" class="lp-cta">Xem thông tin khóa học</a>
-                    </div>
-                    <div class="lp-img">
-                        <img src="${courseThumbnail || 'https://placehold.co/900x506/111111/FFFFFF?text=Landing+Image'}" style="display:block;width:100%;height:auto;">
-                    </div>
-                </section>
-                <section class="lp-sec">
-                    <div class="lp-grid">
-                        <article class="lp-card"><h3>Lợi ích rõ ràng</h3><p>Học viên hiểu trước họ sẽ đạt gì sau khóa học.</p></article>
-                        <article class="lp-card"><h3>Feedback thực tế</h3><p>Thêm ảnh, quote, case study để tăng chuyển đổi.</p></article>
-                        <article class="lp-card"><h3>CTA nổi bật</h3><p>Điều hướng về trang thông tin hoặc mua khóa học nhanh.</p></article>
-                    </div>
-                </section>
-            </div>
-        `;
+        let visualMode = 'element';
+        let selectedElement = null;
 
-        const editor = grapesjs.init({
-            container: '#gjs',
-            height: '100%',
-            fromElement: false,
-            storageManager: false,
-            allowScripts: 1,
-            plugins: ['gjs-preset-webpage'],
-            pluginsOpts: {
-                'gjs-preset-webpage': {
-                    modalImportTitle: 'Dán mã HTML/CSS',
-                    modalImportLabel: 'Nhập nội dung và import',
-                    filestackOpts: false,
-                },
-            },
-        });
+        const helperStyleId = 'builder-editor-helper-style';
 
-        const extractEditorSafeHtml = (html) => {
-            const raw = (html || '').trim();
-            if (!raw) {
-                return raw;
-            }
-
-            try {
-                const parsed = new DOMParser().parseFromString(raw, 'text/html');
-                parsed.querySelectorAll('link[rel="stylesheet"], style, script').forEach((el) => el.remove());
-                const bodyHtml = (parsed.body?.innerHTML || '').trim();
-                return bodyHtml || raw;
-            } catch (error) {
-                return raw;
-            }
-        };
-
-        const isLikelyFullDocument = (html) => {
-            const raw = (html || '').trim();
-            if (!raw) {
-                return false;
-            }
-
-            return /<!doctype|<html[\s>]|<head[\s>]/i.test(raw);
-        };
-
-        const hasHeadAssetTags = (html) => {
-            const raw = html || '';
-            return /<link\b[^>]*rel=["']?stylesheet|<script\b|<style\b/i.test(raw);
-        };
-
-        const parseFullDocumentSkeleton = (html) => {
-            const raw = (html || '').trim();
-            if (!isLikelyFullDocument(raw)) {
-                return null;
-            }
-
-            try {
-                const parsed = new DOMParser().parseFromString(raw, 'text/html');
-                const docEl = parsed.documentElement;
-                const headEl = parsed.head;
-                const bodyEl = parsed.body;
-
-                if (!docEl || !headEl || !bodyEl) {
-                    return null;
-                }
-
-                const toAttrText = (element) => Array.from(element.attributes || [])
-                    .map((attr) => ` ${attr.name}="${String(attr.value).replace(/"/g, '&quot;')}"`)
-                    .join('');
-
-                const doctypeMatch = raw.match(/^\s*<!doctype[^>]*>/i);
-
-                return {
-                    doctype: doctypeMatch ? doctypeMatch[0] : '<!DOCTYPE html>',
-                    htmlAttrs: toAttrText(docEl),
-                    bodyAttrs: toAttrText(bodyEl),
-                    headInnerHtml: headEl.innerHTML || '',
-                };
-            } catch (error) {
-                return null;
-            }
-        };
-
-        const buildHtmlFromSkeleton = (skeleton, bodyInnerHtml) => {
-            if (!skeleton) {
-                return bodyInnerHtml;
-            }
-
-            const bodyContent = (bodyInnerHtml || '').trim();
-            return `${skeleton.doctype}\n<html${skeleton.htmlAttrs}>\n<head>${skeleton.headInnerHtml}</head>\n<body${skeleton.bodyAttrs}>${bodyContent}</body>\n</html>`;
-        };
-
-        const applyDefaultTemplate = () => {
-            const trimmedInitialHtml = (initialHtml || '').trim();
-            const shouldUseInitialHtml = Boolean(trimmedInitialHtml) &&
-                !/^<body[^>]*>\s*<div[^>]*>\s*<\/div>\s*<\/body>$/i.test(trimmedInitialHtml) &&
-                !/^<div[^>]*>\s*<\/div>$/i.test(trimmedInitialHtml);
-
-            editor.setComponents(shouldUseInitialHtml ? extractEditorSafeHtml(trimmedInitialHtml) : defaultHtml);
-            editor.setStyle((initialCss || '').trim() || defaultCss);
-
-            if (manualScriptContent) {
-                const scriptBlock = editor.DomComponents.addComponent({
-                    tagName: 'script',
-                    content: manualScriptContent,
-                });
-                editor.getWrapper().append(scriptBlock);
-            }
-
-            applyHeadAssetsToCanvas([]);
-
-            fullDocumentSkeleton = parseFullDocumentSkeleton(trimmedInitialHtml);
-
-            const initialCssText = (initialCss || '').trim();
-            const initialJsText = (initialJs || '').trim();
-            if (
-                shouldUseInitialHtml &&
-                (
-                    isLikelyFullDocument(trimmedInitialHtml) ||
-                    hasHeadAssetTags(trimmedInitialHtml) ||
-                    initialCssText.includes('@import url(') ||
-                    initialJsText.includes('data-landing-src') ||
-                    trimmedInitialHtml.includes('<link rel="stylesheet"') ||
-                    trimmedInitialHtml.includes('<script')
-                )
-            ) {
-                importedPayload = {
-                    html: trimmedInitialHtml,
-                    css: initialCssText,
-                    js: manualScriptContent,
-                    lockRawOnSave: true,
-                };
-
-                const parsedInitial = parseImportedSnippet(trimmedInitialHtml);
-                applyHeadAssetsToCanvas(parsedInitial.headAssetTags);
-            }
-        };
-
-        const hasRenderableContent = (html) => {
-            const rawHtml = (html || '').trim();
-            if (!rawHtml) {
-                return false;
-            }
-
-            if (
-                /^<body[^>]*>\s*<div[^>]*>\s*<\/div>\s*<\/body>$/i.test(rawHtml) ||
-                /^<div[^>]*>\s*<\/div>$/i.test(rawHtml)
-            ) {
-                return false;
-            }
-
-            try {
-                const parsed = new DOMParser().parseFromString(rawHtml, 'text/html');
-                const nodes = Array.from(parsed.body.querySelectorAll('*'))
-                    .filter((el) => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE');
-                const meaningfulNodes = nodes.filter((el) => {
-                    const tag = el.tagName;
-                    const text = (el.textContent || '').trim();
-                    const hasMediaTag = ['IMG', 'VIDEO', 'IFRAME', 'SVG', 'CANVAS'].includes(tag);
-                    const hasSemanticTag = ['SECTION', 'ARTICLE', 'MAIN', 'HEADER', 'FOOTER', 'NAV', 'H1', 'H2', 'H3', 'P', 'UL', 'OL', 'LI', 'BUTTON', 'A'].includes(tag);
-                    const hasNonTrivialAttrs = Array.from(el.attributes || []).some((attr) => !['id', 'class', 'style'].includes(attr.name));
-
-                    return hasMediaTag || hasSemanticTag || text.length > 0 || hasNonTrivialAttrs;
-                });
-
-                return meaningfulNodes.length > 0 || (parsed.body.textContent || '').trim().length > 0;
-            } catch (error) {
-                return rawHtml.length > 0;
-            }
-        };
-
-        const normalizeEditorHtml = (html) => {
-            const raw = (html || '').trim();
-            if (!raw) {
-                return '';
-            }
-
-            try {
-                const parsed = new DOMParser().parseFromString(raw, 'text/html');
-                const body = parsed.body;
-                if (!body) {
-                    return raw;
-                }
-
-                const bodyInner = (body.innerHTML || '').trim();
-                return bodyInner || raw;
-            } catch (error) {
-                return raw;
-            }
-        };
-
-        const normalizeEditorCss = (css) => (css || '').trim();
+        const isFullDocument = (html) => /<!doctype|<html[\s>]|<head[\s>]/i.test((html || '').trim());
 
         const encodeUtf8Base64 = (value) => {
             const text = String(value ?? '');
-            try {
-                const bytes = new TextEncoder().encode(text);
-                let binary = '';
-                const chunkSize = 0x8000;
+            const bytes = new TextEncoder().encode(text);
+            let binary = '';
+            const chunkSize = 0x8000;
 
-                for (let i = 0; i < bytes.length; i += chunkSize) {
-                    const chunk = bytes.subarray(i, i + chunkSize);
-                    binary += String.fromCharCode(...chunk);
-                }
+            for (let index = 0; index < bytes.length; index += chunkSize) {
+                const chunk = bytes.subarray(index, index + chunkSize);
+                binary += String.fromCharCode(...chunk);
+            }
 
-                return btoa(binary);
-            } catch (error) {
+            return btoa(binary);
+        };
+
+        const formatHtmlDocument = (value) => {
+            const html = String(value ?? '').trim();
+
+            if (!html) {
                 return '';
             }
-        };
 
-        const openImportModal = () => {
-            document.getElementById('import-modal').classList.add('is-open');
-            document.getElementById('import-code').focus();
-        };
-
-        const closeImportModal = () => {
-            document.getElementById('import-modal').classList.remove('is-open');
-        };
-
-        const parseImportedSnippet = (rawSnippet) => {
-            const parsed = new DOMParser().parseFromString(rawSnippet, 'text/html');
-            const bodyHtml = (parsed.body?.innerHTML || '').trim();
-            const htmlClass = (parsed.documentElement?.getAttribute('class') || '').trim();
-            const bodyClass = (parsed.body?.getAttribute('class') || '').trim();
-            const bodyStyle = (parsed.body?.getAttribute('style') || '').trim();
-
-            const escapeAttr = (value) => String(value || '')
-                .replaceAll('&', '&amp;')
-                .replaceAll('"', '&quot;');
-
-            const wrapperClasses = [htmlClass, bodyClass].filter(Boolean).join(' ').trim();
-            const wrapperAttrs = [];
-            if (wrapperClasses) {
-                wrapperAttrs.push(`class="${escapeAttr(wrapperClasses)}"`);
-            }
-            if (bodyStyle) {
-                wrapperAttrs.push(`style="${escapeAttr(bodyStyle)}"`);
+            if (typeof window.html_beautify === 'function') {
+                return window.html_beautify(html, {
+                    indent_size: 2,
+                    preserve_newlines: true,
+                    max_preserve_newlines: 2,
+                    end_with_newline: true,
+                    wrap_line_length: 0,
+                    extra_liners: [],
+                    indent_scripts: 'keep',
+                }).trim();
             }
 
-            const htmlContent = bodyHtml || rawSnippet.trim();
-            const wrappedHtml = wrapperAttrs.length > 0
-                ? `<div ${wrapperAttrs.join(' ')}>${htmlContent}</div>`
-                : htmlContent;
-
-            const headAssetTags = Array.from(parsed.querySelectorAll('head > link, head > style, head > script'))
-                .map((el) => {
-                    const tag = (el.tagName || '').toLowerCase();
-                    return {
-                        tag,
-                        raw: (el.outerHTML || '').trim(),
-                        styleText: tag === 'style' ? (el.textContent || '').trim() : '',
-                    };
-                })
-                .filter((item) => item.raw);
-
-            return {
-                rawHtml: (rawSnippet || '').trim(),
-                html: wrappedHtml,
-                editorHtml: wrappedHtml,
-                headAssetTags,
-            };
+            return html;
         };
 
-        const applyHeadAssetsToCanvas = (assetTags) => {
-            importedHeadAssets = Array.isArray(assetTags)
-                ? assetTags.filter((asset) => (asset?.raw || '').trim().length > 0)
-                : [];
-
-            const inject = () => {
-                const frame = editor.Canvas.getFrameEl();
-                const doc = frame?.contentDocument;
-                const head = doc?.head;
-
-                if (!head) {
-                    return;
-                }
-
-                doc.querySelectorAll('[data-landing-head-asset="1"]').forEach((node) => node.remove());
-
-                importedHeadAssets.forEach((asset) => {
-                    const raw = (asset?.raw || '').trim();
-                    if (!raw) {
-                        return;
-                    }
-
-                    const container = doc.createElement('div');
-                    container.innerHTML = raw;
-                    const element = container.firstElementChild;
-
-                    if (!element) {
-                        return;
-                    }
-
-                    element.setAttribute('data-landing-head-asset', '1');
-                    head.appendChild(element);
-                });
-            };
-
-            inject();
-            setTimeout(inject, 30);
-            setTimeout(inject, 180);
-            setTimeout(inject, 420);
-        };
-
-        const applyImportedCode = () => {
-            const rawSnippet = document.getElementById('import-code').value || '';
-            if (!rawSnippet.trim()) {
-                alert('Vui lòng dán code trước khi áp dụng.');
+        const updateLandingTitleFromHtml = (html) => {
+            if (!landingTitleInput) {
                 return;
             }
-
-            const { rawHtml, html, editorHtml, headAssetTags } = parseImportedSnippet(rawSnippet);
-            if (!html.trim()) {
-                alert('Không đọc được HTML hợp lệ từ đoạn code vừa dán.');
-                return;
-            }
-
-            const keepCss = document.getElementById('import-css').checked;
-            const keepJs = document.getElementById('import-js').checked;
-
-            const selectedHeadAssets = headAssetTags.filter((item) => {
-                if (item.tag === 'link') {
-                    return true;
-                }
-                if (item.tag === 'style') {
-                    return keepCss;
-                }
-                if (item.tag === 'script') {
-                    return keepJs;
-                }
-
-                return false;
-            });
-
-            const previewCss = selectedHeadAssets
-                .filter((item) => item.tag === 'style' && item.styleText)
-                .map((item) => item.styleText)
-                .join('\n');
-
-            editor.setComponents(editorHtml || html);
-
-            if (keepCss && previewCss) {
-                editor.setStyle(previewCss);
-            }
-
-            applyHeadAssetsToCanvas(selectedHeadAssets);
-            fullDocumentSkeleton = parseFullDocumentSkeleton(rawHtml || html);
-
-            manualScriptContent = '';
-
-            importedPayload = {
-                // Save the exact pasted HTML so external assets are never dropped.
-                html: rawHtml || html,
-                css: '',
-                js: '',
-                lockRawOnSave: true,
-            };
-
-            const landingEnabledToggle = document.querySelector('input[name="landing_enabled"]');
-            if (landingEnabledToggle) {
-                landingEnabledToggle.checked = true;
-            }
-
-            closeImportModal();
-            resizeEditor();
-        };
-
-        const resizeEditor = () => {
-            const toolbarHeight = document.querySelector('.landing-toolbar')?.offsetHeight || 0;
-            const statusHeight = document.querySelector('.landing-status')?.offsetHeight || 0;
-            const errorHeight = document.querySelector('.landing-error')?.offsetHeight || 0;
-            const editorHeight = Math.max(window.innerHeight - toolbarHeight - statusHeight - errorHeight, 320);
-
-            const gjsEl = document.getElementById('gjs');
-            gjsEl.style.height = `${editorHeight}px`;
 
             try {
-                editor.refresh({ tools: true });
+                const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
+                const nextTitle = (parsed?.title || '').trim();
+                landingTitleInput.value = nextTitle || existingLandingTitle || courseTitle;
             } catch (error) {
-                // ignore transient resize errors
+                landingTitleInput.value = existingLandingTitle || courseTitle;
             }
         };
 
-        applyDefaultTemplate();
+        const setEditorHtml = (value, { format = true } = {}) => {
+            htmlEditor.value = format ? formatHtmlDocument(value) : String(value ?? '');
+            updateLandingTitleFromHtml(htmlEditor.value);
+        };
 
-        editor.on('load', () => {
-            if (!hasRenderableContent(editor.getHtml())) {
-                applyDefaultTemplate();
+        const escapeHtml = (value) => String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;');
+
+        const buildLegacyDocument = () => {
+            const bodyHtml = (existingHtml || '').trim() || `<section style="padding:40px"><h1>${escapeHtml(courseTitle)}</h1></section>`;
+            const cssTag = (existingCss || '').trim() ? `\n<style>\n${existingCss}\n</style>` : '';
+            const jsTag = (existingJs || '').trim() ? `\n<script>\n${existingJs}\n<\/script>` : '';
+
+            return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(courseTitle)}</title>${cssTag}
+</head>
+<body>
+${bodyHtml}${jsTag}
+</body>
+</html>`;
+        };
+
+        const defaultDocument = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${courseTitle}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+        .hero {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 40px;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 72px 24px;
+        }
+        .eyebrow {
+            margin: 0 0 12px;
+            letter-spacing: .24em;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        .title {
+            margin: 0;
+            font-size: clamp(42px, 6vw, 78px);
+            line-height: 0.98;
+            text-transform: uppercase;
+        }
+        .desc {
+            margin: 18px 0 0;
+            max-width: 640px;
+            font-size: 18px;
+            line-height: 1.8;
+            color: rgba(248, 250, 252, 0.78);
+        }
+        .cta {
+            display: inline-block;
+            margin-top: 28px;
+            padding: 16px 22px;
+            border-radius: 999px;
+            background: #fff;
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .visual {
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .visual img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        @media (max-width: 920px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 48px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div>
+            <p class="eyebrow">Landing course</p>
+            <h1 class="title">${courseTitle}</h1>
+            <p class="desc">${courseDescription || 'Dan file HTML export vao day de luu nguyen ban, khong mat CSS va script.'}</p>
+            <a class="cta" href="#">Chinh landing nay</a>
+        </div>
+        <div class="visual">
+            <img src="${courseThumbnail || 'https://placehold.co/1200x800/111827/FFFFFF?text=Landing+Preview'}" alt="${courseTitle}">
+        </div>
+    </section>
+</body>
+</html>`;
+
+        const getInitialDocument = () => {
+            const rawHtml = (existingHtml || '').trim();
+
+            if (isFullDocument(rawHtml)) {
+                return rawHtml;
             }
 
-            if (importedPayload?.lockRawOnSave) {
-                const parsedImported = parseImportedSnippet(importedPayload.html || '');
-                applyHeadAssetsToCanvas(parsedImported.headAssetTags);
+            if (rawHtml.length > 0 || (existingCss || '').trim().length > 0 || (existingJs || '').trim().length > 0) {
+                return buildLegacyDocument();
             }
 
-            resizeEditor();
-            setTimeout(resizeEditor, 80);
-            setTimeout(resizeEditor, 280);
+            return defaultDocument;
+        };
+
+        const setPreviewBusy = (busy) => {
+            previewState.classList.toggle('is-visible', busy);
+        };
+
+        const renderPreview = () => {
+            const html = htmlEditor.value.trim() || defaultDocument;
+            setPreviewBusy(true);
+            previewFrame.srcdoc = html;
+        };
+
+        const debounce = (callback, delay = 240) => {
+            let timer = null;
+
+            return (...args) => {
+                window.clearTimeout(timer);
+                timer = window.setTimeout(() => callback(...args), delay);
+            };
+        };
+
+        const renderPreviewDebounced = debounce(renderPreview, 220);
+
+        setEditorHtml(getInitialDocument());
+        renderPreview();
+
+        previewFrame.addEventListener('load', () => {
+            attachVisualEditor();
+            window.setTimeout(() => setPreviewBusy(false), 120);
         });
 
-        editor.on('canvas:frame:load', () => {
-            if (importedHeadAssets.length > 0) {
-                applyHeadAssetsToCanvas(importedHeadAssets);
-            } else if (fullDocumentSkeleton) {
-                const parsedImported = parseImportedSnippet(buildHtmlFromSkeleton(fullDocumentSkeleton, editor.getHtml() || ''));
-                applyHeadAssetsToCanvas(parsedImported.headAssetTags);
-            }
+        htmlEditor.addEventListener('input', () => {
+            renderPreviewDebounced();
         });
 
-        window.addEventListener('resize', resizeEditor);
-        window.addEventListener('orientationchange', resizeEditor);
-        resizeEditor();
-
-        document.getElementById('open-import-modal').addEventListener('click', openImportModal);
-        document.getElementById('close-import-modal').addEventListener('click', closeImportModal);
-        document.getElementById('cancel-import-modal').addEventListener('click', closeImportModal);
-        document.getElementById('apply-import-modal').addEventListener('click', applyImportedCode);
-        document.getElementById('import-modal').addEventListener('click', function (event) {
-            if (event.target.id === 'import-modal') {
-                closeImportModal();
-            }
+        htmlEditor.addEventListener('blur', () => {
+            setEditorHtml(htmlEditor.value);
+            renderPreview();
         });
 
-        document.getElementById('save-landing').addEventListener('click', function () {
-            let htmlValue = normalizeEditorHtml(editor.getHtml());
-            let cssValue = normalizeEditorCss(editor.getCss());
-            let projectDataValue = '';
-            const initialRawHtml = (initialHtml || '').trim();
-            const initialRawCss = (initialCss || '').trim();
+        const openPasteHtmlModal = () => {
+            pasteHtmlInput.value = '';
+            pasteHtmlModal.classList.add('is-open');
+            pasteHtmlModal.setAttribute('aria-hidden', 'false');
+            window.setTimeout(() => pasteHtmlInput.focus(), 30);
+        };
 
-            if (!importedPayload && isLikelyFullDocument(initialRawHtml)) {
-                importedPayload = {
-                    html: initialRawHtml,
-                    css: initialRawCss,
-                    js: manualScriptContent,
-                    lockRawOnSave: true,
-                };
+        const closePasteHtmlModal = () => {
+            pasteHtmlModal.classList.remove('is-open');
+            pasteHtmlModal.setAttribute('aria-hidden', 'true');
+        };
+
+        document.getElementById('paste-from-clipboard').addEventListener('click', () => {
+            openPasteHtmlModal();
+        });
+
+        document.getElementById('close-paste-html-modal').addEventListener('click', () => {
+            closePasteHtmlModal();
+        });
+
+        document.getElementById('cancel-paste-html').addEventListener('click', () => {
+            closePasteHtmlModal();
+        });
+
+        document.getElementById('paste-html-modal-backdrop').addEventListener('click', () => {
+            closePasteHtmlModal();
+        });
+
+        document.getElementById('apply-paste-html').addEventListener('click', () => {
+            const pastedHtml = pasteHtmlInput.value.trim();
+
+            if (!pastedHtml) {
+                alert('Hay dan HTML vao o ben tren.');
+                return;
             }
 
-            const htmlLooksEmpty = !hasRenderableContent(htmlValue) || /^<div[^>]*>\s*<\/div>$/i.test(htmlValue);
-            const cssLooksDefault = !cssValue || cssValue === '* { box-sizing: border-box; } body {margin: 0;}';
+            setEditorHtml(pastedHtml);
 
-            if (importedPayload?.lockRawOnSave) {
-                cssValue = importedPayload.css || cssValue;
-                manualScriptContent = importedPayload.js || manualScriptContent;
+            closePasteHtmlModal();
+            renderPreview();
+        });
 
-                if (!fullDocumentSkeleton) {
-                    fullDocumentSkeleton = parseFullDocumentSkeleton(importedPayload.html || '');
+        document.getElementById('refresh-preview').addEventListener('click', () => {
+            renderPreview();
+        });
+
+        document.getElementById('reset-template').addEventListener('click', () => {
+            setEditorHtml(defaultDocument);
+            renderPreview();
+        });
+
+        document.getElementById('open-preview-tab').addEventListener('click', () => {
+            const win = window.open('', '_blank');
+
+            if (!win) {
+                return;
+            }
+
+            win.document.open();
+            win.document.write(htmlEditor.value.trim() || defaultDocument);
+            win.document.close();
+        });
+
+        document.getElementById('save-landing').addEventListener('click', () => {
+            setEditorHtml(htmlEditor.value);
+            const html = htmlEditor.value.trim() || defaultDocument;
+
+            document.getElementById('landing_html').value = html;
+            document.getElementById('landing_html_b64').value = encodeUtf8Base64(html);
+            document.getElementById('landing_css').value = '';
+            document.getElementById('landing_js').value = '';
+            document.getElementById('landing_project_data').value = '';
+            document.getElementById('landing_css_b64').value = '';
+            document.getElementById('landing_js_b64').value = '';
+            document.getElementById('landing_project_data_b64').value = '';
+
+            document.getElementById('landing-form').submit();
+        });
+
+        toggleTextEditButton.addEventListener('click', () => {
+            visualMode = visualMode === 'text' ? 'element' : 'text';
+            clearSelectedElement();
+            applyVisualMode();
+        });
+
+        document.getElementById('apply-element-edit').addEventListener('click', () => {
+            if (!selectedElement) {
+                return;
+            }
+
+            if (canEditTextOnElement(selectedElement)) {
+                selectedElement.textContent = inspectorText.value;
+            }
+
+            if (selectedElement.tagName.toLowerCase() === 'a') {
+                selectedElement.setAttribute('href', inspectorHref.value.trim() || '#');
+            }
+
+            if (['img', 'iframe', 'source', 'video'].includes(selectedElement.tagName.toLowerCase())) {
+                const srcValue = inspectorSrc.value.trim();
+
+                if (srcValue !== '') {
+                    selectedElement.setAttribute('src', srcValue);
+                } else {
+                    selectedElement.removeAttribute('src');
                 }
             }
 
-            if (importedPayload && htmlLooksEmpty) {
-                htmlValue = importedPayload.html;
-            }
-            if (importedPayload && cssLooksDefault && importedPayload.css) {
-                cssValue = importedPayload.css;
+            if (selectedElement.tagName.toLowerCase() === 'img') {
+                selectedElement.setAttribute('alt', inspectorAlt.value);
             }
 
-            const normalizedBodyHtml = normalizeEditorHtml(htmlValue);
-
-            if (fullDocumentSkeleton) {
-                htmlValue = buildHtmlFromSkeleton(fullDocumentSkeleton, normalizedBodyHtml);
+            const classValue = inspectorClass.value.trim();
+            if (classValue !== '') {
+                selectedElement.setAttribute('class', classValue);
             } else {
-                htmlValue = normalizedBodyHtml;
+                selectedElement.removeAttribute('class');
             }
 
-            document.getElementById('landing_html').value = htmlValue;
-            document.getElementById('landing_css').value = cssValue;
-            if (importedPayload?.lockRawOnSave) {
-                document.getElementById('landing_js').value = '';
+            const styleValue = inspectorStyle.value.trim();
+            if (styleValue !== '') {
+                selectedElement.setAttribute('style', styleValue);
             } else {
-                const jsChunks = [manualScriptContent, editor.getJs()]
-                    .map((item) => (item || '').trim())
-                    .filter((item) => item.length > 0);
-                document.getElementById('landing_js').value = Array.from(new Set(jsChunks)).join('\n\n');
+                selectedElement.removeAttribute('style');
             }
-            document.getElementById('landing_project_data').value = projectDataValue;
-            document.getElementById('landing_html_b64').value = encodeUtf8Base64(htmlValue);
-            document.getElementById('landing_css_b64').value = encodeUtf8Base64(cssValue);
-            document.getElementById('landing_js_b64').value = encodeUtf8Base64(document.getElementById('landing_js').value);
-            document.getElementById('landing_project_data_b64').value = encodeUtf8Base64(projectDataValue);
-            document.getElementById('landing-form').submit();
+
+            refreshInspectorFields();
+            syncPreviewToEditor();
         });
+
+        document.getElementById('clear-element-edit').addEventListener('click', () => {
+            clearSelectedElement();
+            applyVisualMode();
+        });
+
+        const attachVisualEditor = () => {
+            const doc = previewFrame.contentDocument;
+
+            if (!doc?.head || !doc.body) {
+                return;
+            }
+
+            if (!doc.getElementById(helperStyleId)) {
+                const style = doc.createElement('style');
+                style.id = helperStyleId;
+                style.textContent = `
+                    [data-builder-text-editable="1"] {
+                        outline: 1px dashed rgba(59, 130, 246, 0.9);
+                        outline-offset: 2px;
+                        cursor: text;
+                    }
+                    [data-builder-text-editable="1"]:focus {
+                        outline: 2px solid rgba(59, 130, 246, 0.95);
+                        background: rgba(59, 130, 246, 0.08);
+                    }
+                    [data-builder-selected="1"] {
+                        outline: 2px solid rgba(245, 158, 11, 0.95);
+                        outline-offset: 2px;
+                        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.22);
+                    }
+                `;
+                doc.head.appendChild(style);
+            }
+
+            if (!doc.body.dataset.builderBound) {
+                doc.body.dataset.builderBound = '1';
+
+                doc.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+
+                    if (!target) {
+                        return;
+                    }
+
+                    if (visualMode !== 'text') {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const element = resolveSelectableElement(target);
+
+                        if (element) {
+                            selectElement(element);
+                        }
+                    }
+
+                    if (visualMode === 'text' && target.closest('a')) {
+                        event.preventDefault();
+                    }
+                }, true);
+
+                doc.addEventListener('input', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+
+                    if (target?.hasAttribute('data-builder-text-editable')) {
+                        syncPreviewToEditorDebounced();
+                    }
+                }, true);
+
+                doc.addEventListener('focusout', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+
+                    if (target?.hasAttribute('data-builder-text-editable')) {
+                        syncPreviewToEditor();
+                    }
+                }, true);
+            }
+
+            applyVisualMode();
+        };
+
+        const resolveSelectableElement = (target) => {
+            let element = target;
+            const blockedTags = ['html', 'head', 'body', 'script', 'style'];
+
+            while (element && blockedTags.includes(element.tagName.toLowerCase())) {
+                element = element.parentElement;
+            }
+
+            return element;
+        };
+
+        const canEditTextOnElement = (element) => {
+            if (!element) {
+                return false;
+            }
+
+            const tag = element.tagName.toLowerCase();
+            const blockedTags = ['img', 'video', 'audio', 'source', 'svg', 'path', 'iframe', 'canvas', 'script', 'style'];
+
+            if (blockedTags.includes(tag)) {
+                return false;
+            }
+
+            return (element.textContent || '').trim().length > 0;
+        };
+
+        const applyVisualMode = () => {
+            toggleTextEditButton.classList.toggle('is-active', visualMode === 'text');
+
+            const doc = previewFrame.contentDocument;
+            if (!doc?.body) {
+                return;
+            }
+
+            doc.querySelectorAll('[data-builder-text-editable]').forEach((element) => {
+                element.removeAttribute('data-builder-text-editable');
+                element.removeAttribute('contenteditable');
+            });
+
+            if (visualMode === 'text') {
+                Array.from(doc.body.querySelectorAll('*'))
+                    .filter((element) => element.children.length === 0 && canEditTextOnElement(element))
+                    .forEach((element) => {
+                        element.setAttribute('data-builder-text-editable', '1');
+                        element.setAttribute('contenteditable', 'true');
+                    });
+            }
+
+            if (visualMode === 'text') {
+                clearSelectedElement();
+            }
+
+            inspector.classList.toggle('is-hidden', visualMode === 'text' || !selectedElement);
+        };
+
+        const selectElement = (element) => {
+            clearSelectedElement();
+            selectedElement = element;
+            selectedElement.setAttribute('data-builder-selected', '1');
+            refreshInspectorFields();
+            inspector.classList.remove('is-hidden');
+        };
+
+        const refreshInspectorFields = () => {
+            if (!selectedElement) {
+                return;
+            }
+
+            const tag = selectedElement.tagName.toLowerCase();
+            inspectorMeta.textContent = `Dang sua <${tag}>`;
+            inspectorText.value = canEditTextOnElement(selectedElement) ? (selectedElement.textContent || '') : '';
+            inspectorHref.value = selectedElement.getAttribute('href') || '';
+            inspectorSrc.value = selectedElement.getAttribute('src') || '';
+            inspectorAlt.value = selectedElement.getAttribute('alt') || '';
+            inspectorClass.value = selectedElement.getAttribute('class') || '';
+            inspectorStyle.value = selectedElement.getAttribute('style') || '';
+
+            inspectorText.disabled = !canEditTextOnElement(selectedElement);
+            inspectorHref.disabled = tag !== 'a';
+            inspectorSrc.disabled = !['img', 'iframe', 'source', 'video'].includes(tag);
+            inspectorAlt.disabled = tag !== 'img';
+        };
+
+        const clearSelectedElement = () => {
+            if (selectedElement) {
+                selectedElement.removeAttribute('data-builder-selected');
+            }
+
+            selectedElement = null;
+            inspectorMeta.textContent = 'Bam vao phan tu trong preview de sua.';
+            inspectorText.value = '';
+            inspectorHref.value = '';
+            inspectorSrc.value = '';
+            inspectorAlt.value = '';
+            inspectorClass.value = '';
+            inspectorStyle.value = '';
+            inspector.classList.add('is-hidden');
+        };
+
+        const getPreviewDocumentHtml = () => {
+            const doc = previewFrame.contentDocument;
+
+            if (!doc?.documentElement) {
+                return htmlEditor.value.trim() || defaultDocument;
+            }
+
+            const clone = doc.documentElement.cloneNode(true);
+            clone.querySelector(`#${helperStyleId}`)?.remove();
+            clone.querySelectorAll('[data-builder-text-editable]').forEach((element) => {
+                element.removeAttribute('data-builder-text-editable');
+                element.removeAttribute('contenteditable');
+            });
+            clone.querySelectorAll('[data-builder-selected]').forEach((element) => {
+                element.removeAttribute('data-builder-selected');
+            });
+            if (clone.querySelector('body')) {
+                clone.querySelector('body').removeAttribute('data-builder-bound');
+            }
+
+            const doctype = doc.doctype
+                ? `<!DOCTYPE ${doc.doctype.name}>`
+                : '<!DOCTYPE html>';
+
+            return `${doctype}\n${clone.outerHTML}`;
+        };
+
+        const syncPreviewToEditor = () => {
+            setEditorHtml(getPreviewDocumentHtml());
+        };
+
+        const syncPreviewToEditorDebounced = debounce(syncPreviewToEditor, 160);
     </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ use App\Support\VietnamPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +34,7 @@ class AuthenticatedSessionController extends Controller
     ) {
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
         $mode = $request->query('mode', 'otp');
 
@@ -41,7 +42,16 @@ class AuthenticatedSessionController extends Controller
             $mode = 'otp';
         }
 
-        return view('auth.login', ['mode' => $mode]);
+        return response()->view('auth.login', ['mode' => $mode], 200, $this->noStoreHeaders());
+    }
+
+    protected function noStoreHeaders(): array
+    {
+        return [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Fri, 01 Jan 1990 00:00:00 GMT',
+        ];
     }
 
     public function sendOtp(Request $request): RedirectResponse|JsonResponse
