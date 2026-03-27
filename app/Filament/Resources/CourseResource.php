@@ -116,7 +116,7 @@ class CourseResource extends Resource
                                                         Forms\Components\TextInput::make('name')->required(),
                                                     ]),
 
-                                                Forms\Components\Grid::make(3)
+                                                Forms\Components\Grid::make(4)
                                                     ->schema([
                                                         Forms\Components\Select::make('level')
                                                             ->label('Cấp độ khóa học')
@@ -136,6 +136,11 @@ class CourseResource extends Resource
 
                                                         Forms\Components\Toggle::make('is_featured')
                                                             ->label('Nổi bật')
+                                                            ->default(false)
+                                                            ->inline(false),
+
+                                                        Forms\Components\Toggle::make('landing_enabled')
+                                                            ->label('Bat landing custom')
                                                             ->default(false)
                                                             ->inline(false),
                                                     ])
@@ -634,6 +639,12 @@ class CourseResource extends Resource
                     ->trueColor('warning')
                     ->falseColor('gray'),
 
+                Tables\Columns\IconColumn::make('landing_enabled')
+                    ->label('Landing')
+                    ->boolean()
+                    ->trueColor('primary')
+                    ->falseColor('gray'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Ngày tạo')
                     ->dateTime('d/m/Y')
@@ -661,6 +672,9 @@ class CourseResource extends Resource
 
                 Tables\Filters\TernaryFilter::make('is_featured')
                     ->label('Nổi bật'),
+
+                Tables\Filters\TernaryFilter::make('landing_enabled')
+                    ->label('Landing custom'),
             ])
             ->actions([
                 Tables\Actions\Action::make('landing_builder')

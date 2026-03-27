@@ -103,9 +103,11 @@ class CourseLandingBuilderController extends Controller
 
         $hasCustomLanding = filled(is_string($landingHtml) ? trim($landingHtml) : $landingHtml);
 
+        $landingEnabled = $request->boolean('landing_enabled') && $hasCustomLanding;
+
         $course->fill([
             'landing_title' => $data['landing_title'] ?? null,
-            'landing_enabled' => $hasCustomLanding,
+            'landing_enabled' => $landingEnabled,
             'landing_html' => $landingHtml,
             'landing_css' => $landingCss,
             'landing_js' => $landingJs,

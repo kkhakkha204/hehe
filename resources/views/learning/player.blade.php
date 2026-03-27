@@ -5,17 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $lesson->title }} - {{ $course->title }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @include('layouts.partials.assets-no-vite')
     <style>
         body {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
-
-        .heading-font {
-            font-family: "Oswald", sans-serif;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .bunny-video-wrapper,
@@ -37,7 +30,7 @@
         }
     </style>
 </head>
-<body class="overflow-hidden bg-[#171717] text-white">
+<body class="overflow-hidden bg-[#111317] text-white">
 @php
     $allLessons = $course->chapters->pluck('lessons')->flatten()->values();
     $currentIndex = $allLessons->search(fn ($item) => $item->id === $lesson->id);
@@ -46,26 +39,10 @@
     $nextLesson = $currentIndex < $allLessons->count() - 1 ? $allLessons[$currentIndex + 1] : null;
     $completedLessonIds = collect($completedLessonIds ?? [])->map(fn ($id) => (int) $id)->all();
     $seedComments = [
-        [
-            'name' => 'Lan Anh',
-            'time' => '2 giờ trước',
-            'content' => 'Bài giảng rất dễ hiểu, xem xong là mình áp dụng được ngay trên mặt mình luôn.',
-        ],
-        [
-            'name' => 'Trúc Vy',
-            'time' => 'Hôm nay',
-            'content' => 'Phần giải thích sản phẩm và cách chọn tone nền rất có tâm, đáng tiền thật sự.',
-        ],
-        [
-            'name' => 'Mai Hương',
-            'time' => 'Hôm qua',
-            'content' => 'Học online mà vẫn có cảm giác được cầm tay chỉ việc, nội dung gọn mà hiệu quả.',
-        ],
-        [
-            'name' => 'Bảo Ngọc',
-            'time' => '3 ngày trước',
-            'content' => 'Mình thích nhất là cách chị phân tích lỗi makeup thường gặp, dễ sửa hơn hẳn.',
-        ],
+        ['name' => 'Lan Anh', 'time' => '2 giờ trước', 'content' => 'Bài giảng rất dễ hiểu, xem xong là mình áp dụng được ngay trên mặt mình luôn.'],
+        ['name' => 'Trúc Vy', 'time' => 'Hôm nay', 'content' => 'Phần giải thích sản phẩm và cách chọn tone nền rất có tâm, đáng tiền thật sự.'],
+        ['name' => 'Mai Hương', 'time' => 'Hôm qua', 'content' => 'Học online mà vẫn có cảm giác được cầm tay chỉ việc, nội dung gọn mà hiệu quả.'],
+        ['name' => 'Bảo Ngọc', 'time' => '3 ngày trước', 'content' => 'Mình thích nhất là cách chị phân tích lỗi makeup thường gặp, dễ sửa hơn hẳn.'],
     ];
 @endphp
 
@@ -78,10 +55,7 @@
         init() {
             window.addEventListener('resize', () => {
                 const nextIsMobile = window.innerWidth < 1024;
-                if (nextIsMobile === this.isMobile) {
-                    return;
-                }
-
+                if (nextIsMobile === this.isMobile) return;
                 this.isMobile = nextIsMobile;
                 this.sidebarOpen = !nextIsMobile;
             });
@@ -90,9 +64,7 @@
             this.sidebarOpen = !this.sidebarOpen;
         },
         closeSidebarIfMobile() {
-            if (this.isMobile) {
-                this.sidebarOpen = false;
-            }
+            if (this.isMobile) this.sidebarOpen = false;
         },
         setTheme(nextTheme) {
             this.theme = nextTheme;
@@ -102,20 +74,20 @@
             this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
         }
     }"
-    :class="theme === 'dark' ? 'bg-[#171717] text-white' : 'bg-[#f5f1e8] text-[#161616]'"
+    :class="theme === 'dark' ? 'bg-[#111317] text-white' : 'bg-[#f3f4f6] text-[#101828]'"
     class="relative flex h-screen flex-col transition-colors duration-300"
 >
     <header
-        :class="theme === 'dark' ? 'border-white/10 bg-[#2b2b2b]' : 'border-black/10 bg-[#e7dfd0]'"
+        :class="theme === 'dark' ? 'border-white/10 bg-[#181c23]' : 'border-black/10 bg-white'"
         class="flex h-14 items-center justify-between border-b px-3 md:px-5"
     >
         <div class="flex min-w-0 items-center gap-2 md:gap-3">
             <a
                 href="{{ route('courses.show', $course->slug) }}"
-                :class="theme === 'dark' ? 'text-white/80 hover:bg-white/10 hover:text-white' : 'text-black/70 hover:bg-black/5 hover:text-black'"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-md transition"
+                :class="theme === 'dark' ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-black/65 hover:bg-black/5 hover:text-black'"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full transition"
             >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </a>
@@ -123,16 +95,16 @@
             <button
                 type="button"
                 @click="toggleSidebar()"
-                :class="theme === 'dark' ? 'bg-white/10 text-white/90 hover:bg-white/15' : 'bg-black/5 text-black/80 hover:bg-black/10'"
-                class="inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2.5 py-2 text-[13px] font-medium leading-none transition sm:px-3 sm:text-sm"
+                :class="theme === 'dark' ? 'bg-white/8 text-white hover:bg-white/12' : 'bg-black/5 text-black hover:bg-black/10'"
+                class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-semibold transition"
             >
-                <span class="mr-1.5 inline-flex w-4 items-center justify-center text-base leading-none" x-text="sidebarOpen ? 'x' : '+'"></span>
+                <span x-text="sidebarOpen ? '−' : '+'" class="text-base leading-none"></span>
                 Giáo trình
             </button>
 
             <div class="min-w-0">
-                <p :class="theme === 'dark' ? 'text-white/40' : 'text-black/45'" class="text-[11px] uppercase tracking-[0.18em]">Khóa học</p>
-                <p :class="theme === 'dark' ? 'text-white/90' : 'text-black'" class="truncate text-sm font-semibold">{{ $course->title }}</p>
+                <p :class="theme === 'dark' ? 'text-white/35' : 'text-black/40'" class="text-[10px] uppercase tracking-[0.18em]">Khóa học</p>
+                <p :class="theme === 'dark' ? 'text-white/95' : 'text-black'" class="truncate text-sm font-semibold">{{ $course->title }}</p>
             </div>
         </div>
 
@@ -141,7 +113,7 @@
                 type="button"
                 @click="toggleTheme()"
                 :class="theme === 'dark' ? 'text-white/75 hover:bg-white/10 hover:text-white' : 'text-black/70 hover:bg-black/5 hover:text-black'"
-                class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full transition"
                 title="Đổi giao diện"
             >
                 <svg x-show="theme === 'dark'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,9 +126,9 @@
 
             <button
                 type="button"
-                @click="commentsOpen = true; if (isMobile) { sidebarOpen = false; }"
+                @click="commentsOpen = true; if (isMobile) sidebarOpen = false;"
                 :class="theme === 'dark' ? 'text-white/75 hover:bg-white/10 hover:text-white' : 'text-black/70 hover:bg-black/5 hover:text-black'"
-                class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition"
+                class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition"
             >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"></path>
@@ -176,7 +148,7 @@
         ></div>
 
         <aside
-            :class="theme === 'dark' ? 'border-white/10 bg-[#232323]' : 'border-black/10 bg-[#efe8da]'"
+            :class="theme === 'dark' ? 'border-white/10 bg-[#171a20]' : 'border-black/10 bg-white'"
             class="fixed inset-y-14 left-0 z-40 h-auto w-[320px] max-w-[88vw] overflow-hidden border-r transition-all duration-300 lg:relative lg:inset-auto lg:z-auto lg:h-full lg:max-w-none"
             :style="isMobile
                 ? (sidebarOpen
@@ -189,17 +161,19 @@
             <template x-if="sidebarOpen">
                 <div class="flex h-full flex-col">
                     <div :class="theme === 'dark' ? 'border-white/10' : 'border-black/10'" class="border-b px-4 py-5">
-                        <h1 :class="theme === 'dark' ? 'text-white' : 'text-black'" class="heading-font line-clamp-2 text-[28px] uppercase leading-none">{{ $course->title }}</h1>
+                        <h1 :class="theme === 'dark' ? 'text-white' : 'text-black'" class="line-clamp-2 text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">{{ $course->title }}</h1>
                         <div class="mt-5">
-                            <div :class="theme === 'dark' ? 'bg-white/10' : 'bg-black/10'" class="h-1.5 overflow-hidden rounded-full">
-                                <div :class="theme === 'dark' ? 'bg-white' : 'bg-black'" class="h-full rounded-full transition-all duration-500" style="width: {{ $progressPercent }}%"></div>
+                            <div :class="theme === 'dark' ? 'bg-white/10' : 'bg-black/10'" class="h-2 overflow-hidden rounded-full">
+                                <div class="h-full rounded-full bg-[#f05123] transition-all duration-500" style="width: {{ $progressPercent }}%"></div>
                             </div>
-                            <p :class="theme === 'dark' ? 'text-white/65' : 'text-black/60'" class="mt-2 text-sm">Tiến độ khóa học: {{ $progressPercent }}% ({{ $completedLessons }}/{{ $totalLessons }} bài)</p>
+                            <p :class="theme === 'dark' ? 'text-white/60' : 'text-black/55'" class="mt-2 text-xs">
+                                Tiến độ khóa học: {{ $progressPercent }}% ({{ $completedLessons }}/{{ $totalLessons }} bài)
+                            </p>
                         </div>
                     </div>
 
                     <div class="min-h-0 flex-1 overflow-y-auto" x-data="{ openChapter: {{ $chapter->id }} }">
-                        @foreach($course->chapters as $chapterItem)
+                        @foreach ($course->chapters as $chapterItem)
                             <section :class="theme === 'dark' ? 'border-white/10' : 'border-black/10'" class="border-b">
                                 <button
                                     type="button"
@@ -217,17 +191,17 @@
                                 </button>
 
                                 <div x-show="openChapter === {{ $chapterItem->id }}" x-transition.opacity.duration.200ms class="space-y-1 px-2 pb-2">
-                                    @foreach($chapterItem->lessons as $lessonItem)
+                                    @foreach ($chapterItem->lessons as $lessonItem)
                                         <a
                                             href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $lessonItem->id]) }}"
                                             @click="closeSidebarIfMobile()"
                                             :class="theme === 'dark'
-                                                ? '{{ $lessonItem->id === $lesson->id ? 'bg-white/12' : 'hover:bg-white/5' }}'
-                                                : '{{ $lessonItem->id === $lesson->id ? 'bg-black/10' : 'hover:bg-black/5' }}'"
-                                            class="flex items-center gap-3 rounded-xl px-3 py-3 transition"
+                                                ? '{{ $lessonItem->id === $lesson->id ? 'bg-white/10 border-white/10' : 'border-transparent hover:bg-white/5' }}'
+                                                : '{{ $lessonItem->id === $lesson->id ? 'bg-black/5 border-black/10' : 'border-transparent hover:bg-black/5' }}'"
+                                            class="flex items-center gap-3 rounded-2xl border px-3 py-3 transition"
                                         >
-                                            <div class="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-black/10">
-                                                @if($lessonItem->thumbnail_url)
+                                            <div class="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-black/10">
+                                                @if ($lessonItem->thumbnail_url)
                                                     <img src="{{ $lessonItem->thumbnail_url }}" alt="{{ $lessonItem->title }}" class="h-full w-full object-cover">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center">
@@ -240,22 +214,24 @@
 
                                             <div class="min-w-0 flex-1">
                                                 <p :class="theme === 'dark' ? 'text-white' : 'text-black'" class="line-clamp-2 text-[14px] font-medium leading-snug">{{ $lessonItem->title }}</p>
-                                                <p :class="theme === 'dark' ? 'text-white/45' : 'text-black/45'" class="mt-1 text-xs">Video bài học</p>
+                                                <p :class="theme === 'dark' ? 'text-white/45' : 'text-black/45'" class="mt-1 text-xs">
+                                                    {{ $lessonItem->is_preview ? 'Bài học xem trước' : 'Video bài học' }}
+                                                </p>
                                             </div>
 
                                             <div class="shrink-0">
-                                                @if(in_array($lessonItem->id, $completedLessonIds, true))
-                                                    <span :class="theme === 'dark' ? 'border-white/30 bg-white text-[#171717]' : 'border-black/20 bg-black text-white'" class="inline-flex h-5 w-5 items-center justify-center rounded-full border">
+                                                @if (in_array($lessonItem->id, $completedLessonIds, true))
+                                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#f05123] text-white">
                                                         <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                                         </svg>
                                                     </span>
-                                                @elseif($lessonItem->id === $lesson->id)
-                                                    <span :class="theme === 'dark' ? 'border-white/30 bg-white/10' : 'border-black/20 bg-black/5'" class="inline-flex h-5 w-5 items-center justify-center rounded-full border">
-                                                        <span :class="theme === 'dark' ? 'bg-white' : 'bg-black'" class="block h-2.5 w-2.5 rounded-full"></span>
+                                                @elseif ($lessonItem->id === $lesson->id)
+                                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#f05123]/40">
+                                                        <span class="block h-2.5 w-2.5 rounded-full bg-[#f05123]"></span>
                                                     </span>
                                                 @else
-                                                    <span :class="theme === 'dark' ? 'border-white/10' : 'border-black/10'" class="block h-4 w-4 rounded-full border"></span>
+                                                    <span :class="theme === 'dark' ? 'border-white/12' : 'border-black/12'" class="block h-4 w-4 rounded-full border"></span>
                                                 @endif
                                             </div>
                                         </a>
@@ -268,26 +244,26 @@
             </template>
         </aside>
 
-        <main :class="theme === 'dark' ? 'bg-[#171717]' : 'bg-[#f5f1e8]'" class="min-w-0 flex-1 overflow-y-auto transition-colors duration-300">
-            <div class="mx-auto w-full max-w-[1100px] px-4 py-8 md:px-8">
+        <main :class="theme === 'dark' ? 'bg-[#111317]' : 'bg-[#f3f4f6]'" class="min-w-0 flex-1 overflow-y-auto transition-colors duration-300">
+            <div class="mx-auto w-full max-w-[1180px] px-4 py-7 md:px-8">
                 <div class="mb-5">
-                    <p :class="theme === 'dark' ? 'text-white/50' : 'text-black/45'" class="text-sm">Video bài học</p>
-                    <h2 :class="theme === 'dark' ? 'text-white' : 'text-black'" class="heading-font mt-2 max-w-[880px] text-[36px] uppercase leading-[1.02] md:text-[46px]">
+                    <p :class="theme === 'dark' ? 'text-white/45' : 'text-black/45'" class="text-[12px] uppercase tracking-[0.18em]">Video bài học</p>
+                    <h2 :class="theme === 'dark' ? 'text-white' : 'text-black'" class="mt-2 max-w-[920px] text-[28px] font-bold leading-[1.08] tracking-[-0.03em] md:text-[42px]">
                         {{ $lesson->title }}
                     </h2>
                 </div>
 
-                <div :class="theme === 'dark' ? 'bg-[#111]' : 'bg-[#ddd3c0]'" class="overflow-hidden rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+                <div :class="theme === 'dark' ? 'bg-[#0b0d12]' : 'bg-white'" class="overflow-hidden rounded-[22px] border border-black/5 shadow-[0_20px_55px_rgba(0,0,0,0.18)]">
                     <div class="aspect-video w-full bg-black">
-                        @if($lesson->embed_code)
+                        @if ($lesson->embed_code)
                             <div class="bunny-video-wrapper h-full w-full">
                                 {!! $lesson->embed_code !!}
                             </div>
-                        @elseif($lesson->thumbnail_url)
+                        @elseif ($lesson->thumbnail_url)
                             <img src="{{ $lesson->thumbnail_url }}" alt="{{ $lesson->title }}" class="h-full w-full object-cover">
                         @else
                             <div class="flex h-full w-full items-center justify-center">
-                                <div :class="theme === 'dark' ? 'text-white/55' : 'text-white/70'" class="text-center">
+                                <div class="text-center text-white/60">
                                     <svg class="mx-auto mb-4 h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                     </svg>
@@ -298,10 +274,14 @@
                     </div>
                 </div>
 
-                <div :class="theme === 'dark' ? 'border-white/10 text-white/70' : 'border-black/10 text-black/70'" class="mt-6 flex items-center justify-between gap-4 border-t pt-5 text-sm">
+                <div :class="theme === 'dark' ? 'border-white/10' : 'border-black/10'" class="mt-6 flex items-center justify-between gap-4 border-t pt-5 text-sm">
                     <div>
-                        @if($prevLesson)
-                            <a href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $prevLesson->id]) }}" :class="theme === 'dark' ? 'hover:text-white' : 'hover:text-black'" class="inline-flex items-center gap-2 transition">
+                        @if ($prevLesson)
+                            <a
+                                href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $prevLesson->id]) }}"
+                                :class="theme === 'dark' ? 'border-white/10 text-white/80 hover:bg-white/5' : 'border-black/10 text-black/75 hover:bg-black/5'"
+                                class="inline-flex h-10 items-center gap-2 rounded-full border px-4 font-medium transition"
+                            >
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
@@ -311,25 +291,29 @@
                     </div>
 
                     <div class="hidden items-center gap-2 md:inline-flex">
-                        @if(in_array($lesson->id, $completedLessonIds, true))
-                            <span :class="theme === 'dark' ? 'bg-white text-[#171717]' : 'bg-black text-white'" class="inline-flex h-5 w-5 items-center justify-center rounded-full">
+                        @if (in_array($lesson->id, $completedLessonIds, true))
+                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#f05123] text-white">
                                 <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                 </svg>
                             </span>
-                            Đã hoàn thành
+                            <span :class="theme === 'dark' ? 'text-white/70' : 'text-black/70'">Đã hoàn thành</span>
                         @else
-                            <span :class="theme === 'dark' ? 'border-white/20 bg-white/5' : 'border-black/20 bg-black/5'" class="inline-flex h-5 w-5 items-center justify-center rounded-full border">
-                                <span :class="theme === 'dark' ? 'bg-white/80' : 'bg-black/80'" class="block h-2.5 w-2.5 rounded-full"></span>
+                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#f05123]/40">
+                                <span class="block h-2.5 w-2.5 rounded-full bg-[#f05123]"></span>
                             </span>
-                            Đang học
+                            <span :class="theme === 'dark' ? 'text-white/70' : 'text-black/70'">Đang học</span>
                         @endif
                     </div>
 
                     <div>
-                        @if($nextLesson)
-                            <a href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $nextLesson->id]) }}" id="next-lesson-link" :class="theme === 'dark' ? 'text-white hover:text-white/75' : 'text-black hover:text-black/65'" class="inline-flex items-center gap-2 font-semibold transition">
-                                Next
+                        @if ($nextLesson)
+                            <a
+                                href="{{ route('learning.lesson', ['course' => $course->slug, 'lesson' => $nextLesson->id]) }}"
+                                id="next-lesson-link"
+                                class="inline-flex h-10 items-center gap-2 rounded-full bg-[#f05123] px-4 font-semibold text-white transition hover:bg-[#d94217]"
+                            >
+                                Bài tiếp
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
@@ -338,12 +322,12 @@
                     </div>
                 </div>
 
-                @if($lesson->content)
+                @if ($lesson->content)
                     <div
                         :class="theme === 'dark'
-                            ? 'prose-invert border-white/10 bg-white/[0.03] prose-headings:text-white prose-p:text-white/75 prose-strong:text-white'
-                            : 'border-black/10 bg-white/70 prose-headings:text-black prose-p:text-black/70 prose-strong:text-black'"
-                        class="prose mt-8 max-w-none rounded-2xl border p-6"
+                            ? 'border-white/10 bg-white/[0.03] prose-invert prose-headings:text-white prose-p:text-white/75 prose-strong:text-white'
+                            : 'border-black/10 bg-white prose-headings:text-black prose-p:text-black/75 prose-strong:text-black'"
+                        class="prose mt-8 max-w-none rounded-[22px] border p-6 shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
                     >
                         {!! $lesson->content !!}
                     </div>
@@ -368,14 +352,14 @@
         x-transition:leave="transform transition ease-in duration-250"
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="translate-x-full"
-        :class="theme === 'dark' ? 'border-white/10 bg-[#202020] text-white' : 'border-black/10 bg-[#faf5eb] text-black'"
+        :class="theme === 'dark' ? 'border-white/10 bg-[#171a20] text-white' : 'border-black/10 bg-white text-black'"
         class="absolute right-0 top-0 z-50 flex h-full w-full max-w-[420px] flex-col border-l shadow-[-20px_0_60px_rgba(0,0,0,0.18)]"
         style="display: none;"
     >
         <div :class="theme === 'dark' ? 'border-white/10' : 'border-black/10'" class="flex items-center justify-between border-b px-5 py-4">
             <div>
                 <p :class="theme === 'dark' ? 'text-white/45' : 'text-black/45'" class="text-[11px] uppercase tracking-[0.16em]">Thảo luận</p>
-                <h3 class="heading-font mt-1 text-[28px] uppercase">Cảm nhận học viên</h3>
+                <h3 class="mt-1 text-[24px] font-bold tracking-[-0.02em]">Cảm nhận học viên</h3>
             </div>
             <button
                 type="button"
@@ -391,10 +375,10 @@
 
         <div class="flex-1 overflow-y-auto px-5 py-5">
             <div class="space-y-4">
-                @foreach($seedComments as $comment)
-                    <article :class="theme === 'dark' ? 'border-white/10 bg-white/[0.035]' : 'border-black/10 bg-white/75'" class="rounded-2xl border p-4">
+                @foreach ($seedComments as $comment)
+                    <article :class="theme === 'dark' ? 'border-white/10 bg-white/[0.035]' : 'border-black/10 bg-[#f8fafc]'" class="rounded-2xl border p-4">
                         <div class="flex items-start gap-3">
-                            <div :class="theme === 'dark' ? 'bg-[#f0c6a5] text-black' : 'bg-[#161616] text-white'" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+                            <div class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f05123] text-sm font-semibold text-white">
                                 {{ strtoupper(mb_substr($comment['name'], 0, 1)) }}
                             </div>
                             <div class="min-w-0 flex-1">

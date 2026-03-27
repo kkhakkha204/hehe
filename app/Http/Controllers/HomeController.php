@@ -16,7 +16,7 @@ class HomeController extends Controller
         $banners = Banner::active()->get();
 
         // Lấy khóa học miễn phí
-        $freeCourses = Course::with(['category', 'author'])
+        $freeCourses = Course::with(['category', 'author', 'chapters.lessons'])
             ->where('is_published', true)
             ->where(function($query) {
                 $query->where('price', 0)
@@ -27,7 +27,7 @@ class HomeController extends Controller
             ->get();
 
         // Lấy khóa học nổi bật
-        $featuredCourses = Course::with(['category', 'author'])
+        $featuredCourses = Course::with(['category', 'author', 'chapters.lessons'])
             ->where('is_published', true)
             ->where('is_featured', true)
             ->latest()
@@ -35,7 +35,7 @@ class HomeController extends Controller
             ->get();
 
         // Lấy khóa học mới nhất
-        $latestCourses = Course::with(['category', 'author'])
+        $latestCourses = Course::with(['category', 'author', 'chapters.lessons'])
             ->where('is_published', true)
             ->latest()
             ->take(6)

@@ -9,11 +9,12 @@
     <!-- About Section -->
     <x-about-section />
 
-    <!-- Free Courses Section -->
-    <x-free-courses-section :courses="$freeCourses" />
-
-    <!-- Featured Courses Section -->
-    <x-featured-courses-section :courses="$featuredCourses" />
+    <!-- F8-style Courses Tabs Section -->
+    <x-home-courses-tabs-section
+        :featured-courses="$featuredCourses"
+        :free-courses="$freeCourses"
+        :latest-courses="$latestCourses"
+    />
 
     <!-- Combo Section -->
     <x-combo-section :combos="$combos" />

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LessonProgress;
+use App\Models\Course;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -66,6 +67,21 @@ class ProfileController extends Controller
             ];
         });
 
+        $enrolledCourseIds = $enrollments
+            ->pluck('course_id')
+            ->filter()
+            ->values();
+
+        $availableCourses = Course::query()
+            ->with(['author', 'category'])
+            ->where('is_published', true)
+            ->when($enrolledCourseIds->isNotEmpty(), function ($query) use ($enrolledCourseIds) {
+                $query->whereNotIn('id', $enrolledCourseIds);
+            })
+            ->latest()
+            ->take(12)
+            ->get();
+
         $courseStats = [
             'packages' => 0,
             'all' => $courses->count(),
@@ -78,6 +94,7 @@ class ProfileController extends Controller
             'user' => $user,
             'activeTab' => $activeTab,
             'courses' => $courses,
+            'availableCourses' => $availableCourses,
             'courseStats' => $courseStats,
         ]);
     }

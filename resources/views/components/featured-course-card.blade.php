@@ -1,7 +1,7 @@
 @props(['course'])
 
 <article class="course-card group">
-    <a href="{{ route('courses.landing', $course->slug) }}" class="block">
+    <a href="{{ route('courses.show', $course->slug) }}" class="block">
         <!-- Thumbnail -->
         <div class="thumbnail relative overflow-hidden" style="aspect-ratio: 16/9;">
             <!-- Brand Logo top left -->

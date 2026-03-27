@@ -16,7 +16,7 @@ class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Course::with(['category', 'author'])
+        $query = Course::with(['category', 'author', 'chapters.lessons'])
             ->where('is_published', true);
 
         if ($request->filled('search')) {
@@ -139,7 +139,7 @@ class CourseController extends Controller
 
         $course->increment('views');
 
-        $hasCustomLanding = filled($course->landing_html);
+        $hasCustomLanding = (bool) $course->landing_enabled && filled($course->landing_html);
 
         if ($hasCustomLanding) {
             $landingHtml = (string) $course->landing_html;
